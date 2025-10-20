@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // {
+    //   "name": "Asterium dev",
+    //   "request": "launch",
+    //   "type": "dart",
+    //   "program": "apps/asterium/lib/main.dart",
+    //   "args": ["--flavor", "stg", "--dart-define-from-file", ".config.dev.json"]
+    // },
+    // {
+    //   "name": "Asterium stg",
+    //   "request": "launch",
+    //   "type": "dart",
+    //   "program": "apps/asterium/lib/main.dart",
+    //   "args": ["--flavor", "stg", "--dart-define-from-file", ".config.stg.json"]
+    // },
+    // {
+    //   "name": "Asterium prod",
+    //   "request": "launch",
+    //   "type": "dart",
+    //   "program": "apps/asterium/lib/main.dart",
+    //   "args": ["--flavor", "prod", "--dart-define-from-file", ".config.prod.json"]
+    // }
+  ]
+}
