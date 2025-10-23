@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-mem
+    ports:
+      - "8080:8080"
+
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080/
+      REALM: myrealm
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8001:8000"
+    depends_on:
+      - keycloak
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: services/api_gateway/Dockerfile
+    environment:
+      AUTH_SERVICE_URL: http://auth:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth
