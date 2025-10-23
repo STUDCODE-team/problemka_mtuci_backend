@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from keycloak_facade import token_for_user, create_user, refresh_token, logout
-from jwks_proxy import router as jwks_router
-from initial_setup import create_realm_and_client
+from .keycloak_facade import token_for_user, create_user, refresh_token, logout
+from .jwks_proxy import router as jwks_router
+from .initial_setup import create_realm_and_client
 import threading
 
 app = FastAPI(title="Auth Facade")

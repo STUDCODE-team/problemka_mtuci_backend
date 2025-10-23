@@ -1,5 +1,5 @@
 import os, requests, time
-from keycloak_facade import keycloak_admin, wait_keycloak_ready
+from .keycloak_facade import keycloak_admin, wait_keycloak_ready
 
 REALM = os.getenv("REALM", "myrealm")
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from keycloak_facade import fetch_jwks
+from .keycloak_facade import fetch_jwks
 
 router = APIRouter()
 

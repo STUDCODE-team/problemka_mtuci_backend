@@ -24,13 +24,13 @@ services:
     depends_on:
       - keycloak
 
-  api_gateway:
-    build:
-      context: .
-      dockerfile: services/api_gateway/Dockerfile
-    environment:
-      AUTH_SERVICE_URL: http://auth:8000
-    ports:
-      - "8000:8000"
-    depends_on:
-      - auth
+  # api_gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: services/api_gateway/Dockerfile
+  #   environment:
+  #     AUTH_SERVICE_URL: http://auth:8000
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - auth
