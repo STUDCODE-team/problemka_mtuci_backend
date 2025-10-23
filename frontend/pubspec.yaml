@@ -5,7 +5,10 @@ dev_dependencies:
   melos: ^7.1.1
   
 workspace: 
-
+  - apps/admin_panel
+  - apps/client_app
+  - packages/core
+  - packages/ui_kit
 
 melos:
   command:
