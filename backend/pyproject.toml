@@ -1,30 +1,11 @@
-[project]
-name = "com-studcode-problemka-mtuci-backend"
-version = "0.1.0"
-description = ""
-authors = [
-    {name = "piksi", email = "pitelinaksenia83412@gmail.com"}
-]
-license = {text = "MIT License"}
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
-
 [tool.poetry]
-packages = [{include = "services/auth/app"}]
-
-[tool.poetry.dependencies]
-python = "^3.12"
-
-# --- Общие зависимости для всех сервисов ---
-fastapi = "^0.111.0"
-uvicorn = { extras = ["standard"], version = "^0.30.0" }
-httpx = "^0.27.0"
-requests = "^2.32.0"
-pydantic = "^2.8.0"
+name = "problemka-monorepo"
+version = "0.1.0"
+description = "Monorepo for Problemka MTUCI backend"
+authors = ["piksi <pitelinaksenia83412@gmail.com>"]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [workspace]
@@ -32,10 +13,3 @@ members = [
     "services/*",
     "libs/*"
 ]
-
-[tool.poetry.group.auth.dependencies]
-python-keycloak = "*"
-
-[tool.poetry.group.api_gateway.dependencies]
-PyJWT = "^2.8.0"
-cryptography = "^42.0.0"

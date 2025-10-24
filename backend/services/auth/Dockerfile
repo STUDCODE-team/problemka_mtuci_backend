@@ -1,11 +1,11 @@
 FROM python:3.12-slim
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock* /app/
-RUN pip install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root --no-interaction
 
-COPY services/auth/app /app/app
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+RUN pip install poetry
+COPY pyproject.toml poetry.lock* ./
+
+# Устанавливаем зависимости (без dev)
+RUN poetry install --no-root --without dev
+COPY . .
+CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

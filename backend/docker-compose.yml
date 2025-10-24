@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.1.0
@@ -12,8 +13,8 @@ services:
 
   auth:
     build:
-      context: .
-      dockerfile: services/auth/Dockerfile
+      context: ./services/auth
+      dockerfile: Dockerfile
     environment:
       KEYCLOAK_URL: http://keycloak:8080/
       REALM: myrealm
@@ -24,13 +25,13 @@ services:
     depends_on:
       - keycloak
 
-  # api_gateway:
-  #   build:
-  #     context: .
-  #     dockerfile: services/api_gateway/Dockerfile
-  #   environment:
-  #     AUTH_SERVICE_URL: http://auth:8000
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - auth
+#  api_gateway:
+#    build:
+#      context: ./services/api_gateway
+#      dockerfile: Dockerfile
+#    environment:
+#      AUTH_SERVICE_URL: http://auth:8000
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - auth

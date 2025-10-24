@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "common"
+version = "0.1.0"
+packages = [{ include = "common" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
