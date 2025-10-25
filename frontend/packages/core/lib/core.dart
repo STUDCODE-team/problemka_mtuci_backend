@@ -1,5 +1,3 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export "src/l10n/s.dart";
+export "src/responsive/extension.dart";
+export "src/responsive/responsive_app.dart";

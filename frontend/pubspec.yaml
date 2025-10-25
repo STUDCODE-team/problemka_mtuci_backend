@@ -17,65 +17,38 @@ melos:
 
   scripts:
     generate:intl:
-      run: dart run bin/scripts/generate_intl.dart
+      run: |
+        melos exec --scope=core -- flutter gen-l10n
       description: "Generate internationalization files for all packages."
 
-    generate:base:
+    generate:client:
       run: |
-        melos exec --scope=base -- flutter pub run build_runner build --delete-conflicting-outputs
-      description: "Generate code in base package."
+        melos exec --scope=client_app -- flutter pub run build_runner build --delete-conflicting-outputs
+      description: "Generate code in client app."
 
-    generate:base:label:
+    generate:admin:
       run: |
-        cd apps/base/label ; flutter pub run build_runner build --delete-conflicting-outputs
-      description: "Generate code in label symlink."
+        melos exec --scope=admin_panel -- flutter pub run build_runner build --delete-conflicting-outputs
+      description: "Generate code in admin app."
 
-    generate:labels:
-      run: dart run bin/scripts/generate_labels.dart
-      description: "Generate code and assets in all label packages except base."
-
-    generate:label:assets:
-      run: dart run bin/scripts/generate_label_assets.dart
-      description: "Generate Flutter assets in all label packages except base."
-
-    generate:fh_logger:
+    generate:ui_kit:
       run: |
-        melos exec --scope=fh_logger -- dart run build_runner build -d
-      description: "Generate code in fh_logger package."
+        melos exec --scope=ui_kit -- flutter pub run build_runner build --delete-conflicting-outputs
+      description: "Generate code in ui_kit package."
 
-    generate:fh_logger:watch:
+    generate:core:
       run: |
-        melos exec --scope=fh_logger -- dart run build_runner watch -d
-      description: "Watch mode for code generation in fh_logger package."
+        melos exec --scope=core -- flutter pub run build_runner build --delete-conflicting-outputs
+      description: "Generate code in core package."
 
     generate:all:
       steps:
         - melos run generate:intl
-        - melos run generate:base
-        - melos run generate:labels
-        - melos run generate:label:assets
-        - melos run generate:fh_logger
+        # - melos run generate:core
+        # - melos run generate:ui_kit
+        - melos run generate:client
+        # - melos run generate:admin
       description: "Generate code in base and assets in all label packages."
-
-    watch:base:
-      run: |
-        melos exec --scope=base -- flutter pub run build_runner watch --delete-conflicting-outputs
-      description: "Watch mode for code generation in base package."
-
-    watch:base:label:
-      run: |
-        cd apps/base/label && flutter pub run build_runner watch --delete-conflicting-outputs
-      description: "Watch mode for code generation in label symlink."
-
-    watch:labels:
-      run: |
-        for dir in apps/*/label; do
-          if [ -d "$dir" ] && [ "$dir" != "apps/base/label" ]; then
-            echo "Watching $dir"
-            (cd "$dir" && flutter pub run build_runner watch --delete-conflicting-outputs)
-          fi
-        done
-      description: "Watch mode for code and assets generation in all label packages except base."
 
     clean:
       run: |
