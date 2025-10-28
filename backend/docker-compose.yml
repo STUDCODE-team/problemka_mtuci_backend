@@ -7,14 +7,18 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: dev-mem
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://176.108.242.162:5433/keycloak_db
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
     ports:
       - "8080:8080"
 
   auth:
     build:
-      context: ./services/auth
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/auth/Dockerfile
     environment:
       KEYCLOAK_URL: http://keycloak:8080/
       REALM: myrealm
@@ -35,3 +39,6 @@ services:
 #      - "8000:8000"
 #    depends_on:
 #      - auth
+
+volumes:
+  postgres_data:

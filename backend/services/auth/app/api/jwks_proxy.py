@@ -1,7 +1,9 @@
 from fastapi import APIRouter
-from .keycloak_facade import fetch_jwks
+
+from .jwks_service import fetch_jwks
 
 router = APIRouter()
+
 
 @router.get("/.well-known/jwks.json")
 async def jwks():
