@@ -14,6 +14,11 @@ requests = "^2.32.0"
 pydantic = "^2.8.0"
 python-keycloak = "*"
 
+fastapi-users = { version = "^15.0.1", extras = ["sqlalchemy2", "bcrypt", "jwt"] }
+sqlalchemy = "^2.0.22"
+aiosqlite = "^0.21.0"
+psycopg2-binary = "^2.9.11"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 black = "^24.0.0"

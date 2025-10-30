@@ -22,7 +22,7 @@ class RefreshIn(BaseModel):
     refresh_token: str
 
 
-@router.post("/login")
+@router.post("/request_otp")
 def login(payload: LoginIn):
     try:
         return auth_service.login(payload.username, payload.password)
@@ -30,7 +30,7 @@ def login(payload: LoginIn):
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.post("/register")
+@router.post("/verify_otp")
 def register(payload: RegisterIn):
     try:
         return auth_service.register(payload.username, payload.email, payload.password)

@@ -1,26 +1,25 @@
-# auth/app/services/auth_service.py
-from app.use_cases.login import LoginUseCase
 from app.use_cases.logout import LogoutUseCase
 from app.use_cases.refresh import RefreshUseCase
-from app.use_cases.register import RegisterUseCase
+from app.use_cases.request_otp import RequestOtpUseCase
+from app.use_cases.verify_otp import VerifyOtpUseCase
 from libs.common.domain.auth.i_auth_service import IAuthService
 
 
 class AuthService(IAuthService):
     def __init__(self):
-        self.login_uc = LoginUseCase()
-        self.register_uc = RegisterUseCase()
+        self.request_otp_uc = RequestOtpUseCase()
+        self.verify_otp_uc = VerifyOtpUseCase()
         self.refresh_uc = RefreshUseCase()
         self.logout_uc = LogoutUseCase()
 
-    def login(self, username: str, password: str):
-        return self.login_uc.execute(username, password)
+    def request_otp(self, email: str):
+        return self.request_otp_uc.execute(email)
 
-    def register(self, username: str, email: str, password: str):
-        return self.register_uc.execute(username, email, password)
+    def verify_otp(self, email: str, code: str):
+        return self.verify_otp_uc.execute(email, code)
 
-    def refresh(self, refresh_token_str: str):
-        return self.refresh_uc.execute(refresh_token_str)
+    def refresh(self, refresh_token: str):
+        return self.refresh_uc.execute(refresh_token)
 
-    def logout(self, refresh_token_str: str):
-        return self.logout_uc.execute(refresh_token_str)
+    def logout(self, refresh_token: str):
+        return self.logout_uc.execute(refresh_token)

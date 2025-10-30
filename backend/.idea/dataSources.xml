@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:postgresql://176.108.242.162:5433/keycloak_db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="0@176.108.242.162" uuid="c01245c8-7d66-49dc-9de5-a2447b498af9">
+      <driver-ref>redis</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>jdbc.RedisDriver</jdbc-driver>
+      <jdbc-url>jdbc:redis://176.108.242.162:6379/0</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
