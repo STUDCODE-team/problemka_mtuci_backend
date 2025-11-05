@@ -4,15 +4,15 @@ from abc import ABC, abstractmethod
 class IAuthService(ABC):
 
     @abstractmethod
-    def request_otp(self, username, password):
+    def request_otp(self, email):
         pass
 
     @abstractmethod
-    def verify_otp(self, refresh_token):
+    def verify_otp(self, email, code):
         pass
 
     @abstractmethod
-    def refresh(self, username, email, password):
+    def refresh(self, refresh_token):
         pass
 
     @abstractmethod

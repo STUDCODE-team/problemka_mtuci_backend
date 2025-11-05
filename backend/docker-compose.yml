@@ -1,42 +1,29 @@
 services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.1.0
-    command: start-dev
+  postgres:
+    image: postgres:15
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://176.108.242.162:5433/keycloak_db
-      KC_DB_USERNAME: db
-      KC_DB_PASSWORD: db
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+      POSTGRES_DB: keycloak_db  # оставляем название, как было
     ports:
-      - "8080:8080"
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   auth:
     build:
       context: .
       dockerfile: services/auth/Dockerfile
     environment:
-      KEYCLOAK_URL: http://keycloak:8080/
-      REALM: myrealm
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: keycloak_db   # оставляем старое название
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
     ports:
       - "8001:8000"
     depends_on:
-      - keycloak
-
-#  api_gateway:
-#    build:
-#      context: ./services/api_gateway
-#      dockerfile: Dockerfile
-#    environment:
-#      AUTH_SERVICE_URL: http://auth:8000
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - auth
+      - postgres
 
 volumes:
   postgres_data:

@@ -1,39 +1,31 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 
 from app.services.auth_service import AuthService
+from libs.common.domain.auth.models.schemas.request_otp import RequestOtp
+from libs.common.domain.auth.models.schemas.verify_otp import VerifyOtp
+from libs.common.infrastructure.redis.redis_client import init_redis
 
 router = APIRouter()
 auth_service = AuthService()
 
 
-class LoginIn(BaseModel):
-    username: str
-    password: str
-
-
-class RegisterIn(BaseModel):
-    username: str
-    email: str
-    password: str
-
-
-class RefreshIn(BaseModel):
-    refresh_token: str
+@app.on_event("startup")
+async def startup_event():
+    await init_redis("redis://localhost:6379/0")  # или другой URL твоего Redis
 
 
 @router.post("/request_otp")
-def login(payload: LoginIn):
+def request_otp(payload: RequestOtp):
     try:
-        return auth_service.login(payload.username, payload.password)
+        return auth_service.request_otp(payload.email)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
 
 @router.post("/verify_otp")
-def register(payload: RegisterIn):
+def verify_otp(payload: VerifyOtp):
     try:
-        return auth_service.register(payload.username, payload.email, payload.password)
+        return auth_service.register(payload.email, payload.code)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
