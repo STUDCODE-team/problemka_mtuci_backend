@@ -14,16 +14,21 @@ services:
     build:
       context: .
       dockerfile: services/auth/Dockerfile
+    volumes:
+      - ./services/auth:/app/services/auth          # код сервиса
+      - ./libs/common:/app/libs/common              # общая библиотека
+      - .env:/app/.env
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: keycloak_db   # оставляем старое название
+      POSTGRES_DB: keycloak_db
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloak
     ports:
       - "8001:8000"
     depends_on:
       - postgres
+
 
 volumes:
   postgres_data:

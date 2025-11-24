@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 import redis.asyncio as redis
-from sqlalchemy.orm import Session
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.email_sender import send_email_async
 from app.services.otp_service import OTPService
 from app.services.token_service import TokenService
 from libs.common.config.settings import settings
@@ -15,42 +16,37 @@ from libs.common.utils.crypto import hash_value, verify_hash
 
 
 class AuthService(IAuthService):
-    def __init__(self, db: Session, redis_client: redis.Redis):
+    def __init__(self, db: AsyncSession, redis_client: redis.Redis):
+        print("AuthService init called")
         self.db = db
         self.otp_service = OTPService(redis_client)
         self.token_service = TokenService()
 
     async def request_otp(self, email: str):
-
         otp = await self.otp_service.create_otp(email)
-
-        await send_email_async(
-            to_email=email,
-            subject="Ваш код подтверждения",
-            body=f"Ваш одноразовый код: {otp}",
-        )
-
-        return {"detail": "OTP sent to email"}
+        # await send_email_async(to_email=email, subject="Ваш код подтверждения", body=f"Ваш одноразовый код: {otp}")
+        return {"otp": otp}
 
     async def verify_otp(self, email: str, code: str):
-
         if not await self.otp_service.verify_otp(email, code):
             raise ValueError("Invalid or expired OTP")
 
         # Проверяем, есть ли пользователь
-        user = self.db.query(User).filter(User.email == email).first()
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
         if not user:
             user = User(email=email, role=UserRole.USER)
             self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+            await self.db.commit()
+            await self.db.refresh(user)
 
         # Создаём токены
         access_token = self.token_service.create_access_token(user_id=str(user.id), role=user.role.value)
         refresh_token, jti = self.token_service.create_refresh_token(user_id=str(user.id))
 
         # Сохраняем refresh token
-        expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         refresh = RefreshToken(
             user_id=user.id,
             token_hash=hash_value(refresh_token),
@@ -58,7 +54,7 @@ class AuthService(IAuthService):
             expires_at=expires_at,
         )
         self.db.add(refresh)
-        self.db.commit()
+        await self.db.commit()
 
         return {
             "access_token": access_token,
@@ -75,25 +71,24 @@ class AuthService(IAuthService):
         jti = payload.get("jti")
         user_id = payload.get("sub")
 
-        refresh_record = (
-            self.db.query(RefreshToken)
-            .filter(RefreshToken.jti == jti, RefreshToken.revoked_at.is_(None))
-            .first()
+        result = await self.db.execute(
+            select(RefreshToken).where(RefreshToken.jti == jti, RefreshToken.revoked_at.is_(None))
         )
-
+        refresh_record = result.scalar_one_or_none()
         if not refresh_record:
             raise ValueError("Refresh token not found or revoked")
 
-        # Проверяем срок жизни
-        if refresh_record.expires_at < datetime.now(UTC):
+        if refresh_record.expires_at < datetime.now(timezone.utc):
             raise ValueError("Refresh token expired")
 
-        # Проверяем хэш
         if not verify_hash(refresh_token, refresh_record.token_hash):
             raise ValueError("Invalid refresh token")
 
-        # Создаём новый access-токен
-        user = self.db.query(User).get(user_id)
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise ValueError("User not found")
+
         new_access = self.token_service.create_access_token(str(user.id), user.role.value)
 
         return {"access_token": new_access, "refresh_token": refresh_token, "token_type": "bearer"}
@@ -102,11 +97,24 @@ class AuthService(IAuthService):
         payload = self.token_service.jwt_decode(refresh_token)
         jti = payload.get("jti")
 
-        refresh_record = self.db.query(RefreshToken).filter(RefreshToken.jti == jti).first()
+        result = await self.db.execute(select(RefreshToken).where(RefreshToken.jti == jti))
+        refresh_record = result.scalar_one_or_none()
         if not refresh_record:
             return {"detail": "Already logged out"}
 
-        refresh_record.revoked_at = datetime.now(UTC)
-        self.db.commit()
+        refresh_record.revoked_at = datetime.now(timezone.utc)
+        await self.db.commit()
 
         return {"detail": "Logged out successfully"}
+
+    async def has_role(self, email: str, role: UserRole):
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if user.role != role:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        return True

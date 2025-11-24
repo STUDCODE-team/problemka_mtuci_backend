@@ -9,9 +9,12 @@ class OTPService:
         self.redis = redis_client
 
     async def create_otp(self, email: str) -> str:
-        otp = generate_value(6)
+        if settings.GENERATE_DEFAULT_OTP:
+            otp = '123456'
+        else:
+            otp = generate_value(6)
         otp_hash = hash_value(otp)
-        await self.redis.setex(f"otp:{email}", settings.otp_ttl_sec, otp_hash)
+        await self.redis.setex(f"otp:{email}", settings.OTP_TTL_SEC, otp_hash)
         return otp
 
     async def verify_otp(self, email: str, code: str) -> bool:
