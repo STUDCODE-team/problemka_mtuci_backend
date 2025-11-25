@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "common"
+version = "0.1.0"
+description = "Shared utilities and base models for all microservices"
+authors = ["piksi <pitelinaksenia83412@gmail.com>"]
+packages = [{ include = "common" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.8.0"
+sqlalchemy = "^2.0.22"      # (если используешь модели SQLAlchemy)
+typing-extensions = "^4.12" # иногда нужно для Pydantic 2+
+loguru = "^0.7.2"           # если есть общие логгеры
+pydantic-settings = "^2.0"
+asyncpg = "^0.30.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
