@@ -5,14 +5,14 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.otp_service import OTPService
-from app.services.token_service import TokenService
 from libs.common.config.settings import settings
 from libs.common.domain.auth.i_auth_service import IAuthService
 from libs.common.domain.auth.models.db.refresh_token import RefreshToken
 from libs.common.domain.auth.models.db.user import User
 from libs.common.domain.auth.models.enums.user_roles import UserRole
 from libs.common.utils.crypto import hash_value, verify_hash
+from services.auth.app.services.otp_service import OTPService
+from services.auth.app.services.token_service import TokenService
 
 
 class AuthService(IAuthService):
