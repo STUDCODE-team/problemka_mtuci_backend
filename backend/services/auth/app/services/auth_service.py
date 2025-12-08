@@ -1,60 +1,52 @@
-from datetime import datetime, timedelta, timezone
-
-import redis.asyncio as redis
-from fastapi import HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta, UTC
+from uuid import UUID
 
 from libs.common.config.settings import settings
-from libs.common.domain.auth.i_auth_service import IAuthService
-from libs.common.domain.auth.models.db.refresh_token import RefreshToken
-from libs.common.domain.auth.models.db.user import User
-from libs.common.domain.auth.models.enums.user_roles import UserRole
-from libs.common.utils.crypto import hash_value, verify_hash
+from services.auth.app.data.repositories.implementations.sqlalchemy_refresh_token_repository import \
+    RefreshTokenRepository
+from services.auth.app.data.repositories.implementations.sqlalchemy_user_repository import UserRepository
+from services.auth.app.domain.models.enums.user_roles import UserRole
 from services.auth.app.services.otp_service import OTPService
 from services.auth.app.services.token_service import TokenService
 
 
-class AuthService(IAuthService):
-    def __init__(self, db: AsyncSession, redis_client: redis.Redis):
-        print("AuthService init called")
-        self.db = db
-        self.otp_service = OTPService(redis_client)
-        self.token_service = TokenService()
+class AuthService:
+    def __init__(
+            self,
+            user_repo: UserRepository,
+            refresh_repo: RefreshTokenRepository,
+            otp_service: OTPService,
+            token_service: TokenService,
+    ):
+        self.user_repo = user_repo
+        self.refresh_repo = refresh_repo
+        self.otp_service = otp_service
+        self.token_service = token_service
 
-    async def request_otp(self, email: str):
-        otp = await self.otp_service.create_otp(email)
-        # await send_email_async(to_email=email, subject="Ваш код подтверждения", body=f"Ваш одноразовый код: {otp}")
-        return {"otp": otp}
+    async def request_otp(self, email: str) -> None:
+        await self.otp_service.create_otp(email)
 
-    async def verify_otp(self, email: str, code: str):
+    async def verify_otp(self, email: str, code: str) -> dict:
         if not await self.otp_service.verify_otp(email, code):
             raise ValueError("Invalid or expired OTP")
 
-        # Проверяем, есть ли пользователь
-        result = await self.db.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-
+        user = await self.user_repo.get_by_email(email)
         if not user:
-            user = User(email=email, role=UserRole.USER)
-            self.db.add(user)
-            await self.db.commit()
-            await self.db.refresh(user)
+            user = await self.user_repo.create(email)
 
-        # Создаём токены
-        access_token = self.token_service.create_access_token(user_id=str(user.id), role=user.role.value)
-        refresh_token, jti = self.token_service.create_refresh_token(user_id=str(user.id))
+        access_token = self.token_service.create_access_token(
+            user_id=str(user.id),
+            role=user.role.value,
+        )
+        refresh_token, jti = self.token_service.generate_refresh_token(str(user.id))
 
-        # Сохраняем refresh token
-        expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        refresh = RefreshToken(
+        expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        await self.refresh_repo.save(
             user_id=user.id,
-            token_hash=hash_value(refresh_token),
+            raw_token=refresh_token,
             jti=jti,
             expires_at=expires_at,
         )
-        self.db.add(refresh)
-        await self.db.commit()
 
         return {
             "access_token": access_token,
@@ -63,58 +55,53 @@ class AuthService(IAuthService):
             "role": user.role.value,
         }
 
-    async def refresh(self, refresh_token: str):
-        payload = self.token_service.jwt_decode(refresh_token)
-        if payload.get("type") != "refresh":
-            raise ValueError("Invalid token type")
+    async def refresh(self, refresh_token: str) -> dict:
+        payload = self.token_service.validate_refresh_token(refresh_token)
+        old_jti = payload["jti"]
+        user_id_str = payload["sub"]
 
-        jti = payload.get("jti")
-        user_id = payload.get("sub")
+        old_record = await self.refresh_repo.find_active_by_jti(old_jti)
+        if not old_record or old_record.user_id != UUID(user_id_str):
+            raise ValueError("Invalid or revoked refresh token")
 
-        result = await self.db.execute(
-            select(RefreshToken).where(RefreshToken.jti == jti, RefreshToken.revoked_at.is_(None))
-        )
-        refresh_record = result.scalar_one_or_none()
-        if not refresh_record:
-            raise ValueError("Refresh token not found or revoked")
-
-        if refresh_record.expires_at < datetime.now(timezone.utc):
-            raise ValueError("Refresh token expired")
-
-        if not verify_hash(refresh_token, refresh_record.token_hash):
-            raise ValueError("Invalid refresh token")
-
-        result = await self.db.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
+        user = await self.user_repo.get_by_id(user_id_str)
         if not user:
             raise ValueError("User not found")
 
-        new_access = self.token_service.create_access_token(str(user.id), user.role.value)
+        new_access_token = self.token_service.create_access_token(
+            user_id=str(user.id),
+            role=user.role.value,
+        )
+        new_refresh_token, new_jti = self.token_service.generate_refresh_token(str(user.id))
 
-        return {"access_token": new_access, "refresh_token": refresh_token, "token_type": "bearer"}
+        expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        await self.refresh_repo.save(
+            user_id=user.id,
+            raw_token=new_refresh_token,
+            jti=new_jti,
+            expires_at=expires_at,
+        )
+        await self.refresh_repo.revoke_by_jti(old_jti)
 
-    async def logout(self, refresh_token: str):
-        payload = self.token_service.jwt_decode(refresh_token)
-        jti = payload.get("jti")
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+        }
 
-        result = await self.db.execute(select(RefreshToken).where(RefreshToken.jti == jti))
-        refresh_record = result.scalar_one_or_none()
-        if not refresh_record:
-            return {"detail": "Already logged out"}
+    async def logout(self, refresh_token: str) -> None:
+        try:
+            payload = self.token_service.validate_refresh_token(refresh_token)
+            jti = payload.get("jti")
+            if jti:
+                await self.refresh_repo.revoke_by_jti(jti)
+        except ValueError:
+            pass
 
-        refresh_record.revoked_at = datetime.now(timezone.utc)
-        await self.db.commit()
-
-        return {"detail": "Logged out successfully"}
-
-    async def has_role(self, email: str, role: UserRole):
-        result = await self.db.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-
+    async def has_role(self, email: str, required_role: UserRole) -> bool:
+        user = await self.user_repo.get_by_email(email)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        if user.role != role:
-            raise HTTPException(status_code=403, detail="Access denied")
-
+            raise ValueError("User not found")
+        if user.role != required_role:
+            raise ValueError("Insufficient permissions")
         return True

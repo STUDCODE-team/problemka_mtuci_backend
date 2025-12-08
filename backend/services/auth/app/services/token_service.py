@@ -1,30 +1,26 @@
-import uuid
-from datetime import timedelta, UTC, datetime
-
-import jwt
+from datetime import datetime, timedelta, UTC
+from uuid import uuid4
 
 from libs.common.config.settings import settings
+from services.auth.app.data.repositories.interfaces.i_token_repository import TokenProvider
 
 
 class TokenService:
-    def create_access_token(self, user_id: str, role: str):
-        return self.jwt_create(
-            {"sub": user_id, "role": role, "type": "access"},
-            timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        )
+    def __init__(self, token_provider: TokenProvider):
+        self.provider = token_provider
 
-    def create_refresh_token(self, user_id: str):
-        jti = str(uuid.uuid4())
-        token = self.jwt_create(
-            {"sub": user_id, "jti": jti, "type": "refresh"},
-            timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        )
-        return token, jti
+    def create_access_token(self, user_id: str, role: str) -> str:
+        expires_at = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        return self.provider.create_access_token(user_id, role, expires_at)
 
-    def jwt_create(self, payload: dict, expires_delta: timedelta) -> str:
-        to_encode = payload.copy()
-        to_encode["exp"] = datetime.now(UTC) + expires_delta
-        return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
+    def generate_refresh_token(self, user_id: str) -> tuple[str, str]:
+        jti = uuid4()
+        expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        token = self.provider.create_refresh_token(jti, user_id, expires_at)
+        return token, str(jti)  # jti возвращаем только для сохранения в БД
 
-    def jwt_decode(self, token: str):
-        return jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+    def validate_access_token(self, token: str) -> dict:
+        return self.provider.decode_access_token(token)
+
+    def validate_refresh_token(self, token: str) -> dict:
+        return self.provider.decode_refresh_token(token)

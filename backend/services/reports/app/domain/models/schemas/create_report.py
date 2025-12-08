@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from libs.common.domain.reports.models.enums.report_type import ReportType
+from services.reports.app.domain.models.enums.report_type import ReportType
 
 
 class CreateReportDto(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from libs.common.domain.auth.models.enums.user_roles import UserRole
+from services.auth.app.domain.models.enums.user_roles import UserRole
 
 
 class RequestOtp(BaseModel):

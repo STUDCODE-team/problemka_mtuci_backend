@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List
 from uuid import UUID
 
-from libs.common.domain.reports.models.schemas.create_report import CreateReportDto
-from libs.common.domain.reports.models.schemas.read_report import ReadReportDto
-from libs.common.domain.reports.models.schemas.update_report import UpdateReportDTO
+from services.reports.app.domain.models.schemas.create_report import CreateReportDto
+from services.reports.app.domain.models.schemas.read_report import ReadReportDto
+from services.reports.app.domain.models.schemas.update_report import UpdateReportDto
 
 
 class IReportService(ABC):
@@ -13,7 +13,8 @@ class IReportService(ABC):
     def create_report(
             self,
             report_id: UUID,
-            dto: CreateReportDto
+            dto: CreateReportDto,
+            reporter_id: UUID
     ) -> ReadReportDto:
         pass
 
@@ -28,7 +29,7 @@ class IReportService(ABC):
     def update_report(
             self,
             report_id: UUID,
-            dto: UpdateReportDTO
+            dto: UpdateReportDto
     ) -> ReadReportDto:
         pass
 
