@@ -2,7 +2,7 @@ from typing import Optional
 
 import redis
 
-from services.auth.app.data.repositories.interfaces.otp_repository import OTPRepository
+from services.auth.app.data.repositories.interfaces.i_otp_repository import OTPRepository
 
 
 class RedisOTPRepository(OTPRepository):

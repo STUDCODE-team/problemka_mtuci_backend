@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.reports.app.data.repositories.report_repository import ReportRepository
+from services.reports.app.data.repositories.implemetations.report_repository import ReportRepository
 from services.reports.app.domain.models.schemas.create_report import CreateReportDto
 from services.reports.app.domain.models.schemas.update_report import UpdateReportDto
 from services.reports.app.services.report_service import ReportService

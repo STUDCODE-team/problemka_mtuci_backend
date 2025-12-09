@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from services.reports.app.data.repositories.report_repository import ReportRepository
+from services.reports.app.data.repositories.implemetations.report_repository import ReportRepository
 from services.reports.app.domain.i_report_service import IReportService
 from services.reports.app.domain.models.db.report import Report
 from services.reports.app.domain.models.enums.report_status import ReportStatus
@@ -31,24 +31,43 @@ class ReportService(IReportService):
             self,
             report_id: UUID
     ) -> ReadReportDto:
-        pass
+        report = await self.repo.get(report_id)
+        if not report:
+            raise ValueError(f"Report with id {report_id} not found")
+        return report
 
     async def delete_report(
             self,
             report_id: UUID
     ) -> None:
-        pass
+        report = await self.repo.get(report_id)
+        if not report:
+            raise ValueError(f"Report with id {report_id} not found")
+        await self.repo.delete(report)
 
     async def update_report(
             self,
             report_id: UUID,
             data: UpdateReportDto
     ) -> ReadReportDto:
-        pass
+        report = await self.repo.get(report_id)
+        if not report:
+            raise ValueError(f"Report with id {report_id} not found")
+
+        if data.type is not None:
+            report.type = data.type
+        if data.status is not None:
+            report.status = data.status
+        if data.isExplicit is not None:
+            report.is_explicit = data.isExplicit
+
+        updated_report = await self.repo.update(report)
+        return ReadReportDto.model_validate(updated_report)
 
     async def get_all_reports(
             self,
             limit: int = 50,
             offset: int = 0
     ) -> List[ReadReportDto]:
-        pass
+        reports = await self.repo.get_all(limit=limit, offset=offset)
+        return [ReadReportDto.model_validate(report) for report in reports]

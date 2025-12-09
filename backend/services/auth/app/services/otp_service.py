@@ -1,6 +1,6 @@
 from libs.common.config.settings import settings
 from libs.common.utils.crypto import hash_value, verify_hash, generate_value
-from services.auth.app.data.repositories.interfaces.otp_repository import OTPRepository
+from services.auth.app.data.repositories.interfaces.i_otp_repository import OTPRepository
 
 
 class OTPService:
