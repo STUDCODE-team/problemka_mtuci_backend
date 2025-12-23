@@ -4,14 +4,12 @@ from fastapi import FastAPI
 
 from libs.common.infrastructure.db.base import Base
 from libs.common.infrastructure.db.engine import engine
-from libs.common.infrastructure.redis.redis_client import init_redis
-from services.auth.app.api.routes_auth import router as auth_router
+from services.reports.app.api.routes_reports import router as reports_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Startup
-    await init_redis()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -20,9 +18,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Auth Facade",
+    title="Reports microservice",
     lifespan=lifespan,
     debug=True,
 )
 
-app.include_router(auth_router, prefix="/auth")
+app.include_router(reports_router, prefix="/reports")

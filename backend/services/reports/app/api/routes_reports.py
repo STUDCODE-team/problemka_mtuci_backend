@@ -8,7 +8,7 @@ from services.reports.app.domain.models.schemas.create_report import CreateRepor
 from services.reports.app.domain.models.schemas.update_report import UpdateReportDto
 from services.reports.app.services.report_service import ReportService
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(tags=["reports"])
 
 
 def get_service(session: AsyncSession = Depends()):

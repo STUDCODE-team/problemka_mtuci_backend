@@ -8,13 +8,13 @@ from services.auth.app.domain.models.schemas.request_otp import RequestOtp
 from services.auth.app.domain.models.schemas.verify_otp import VerifyOtp
 from services.auth.app.services.auth_service import AuthService
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 
 @router.post("/request_otp")
 async def request_otp(
         payload: RequestOtp,
-        service: AuthService = Depends(get_auth_service),  # ← теперь работает!
+        service: AuthService = Depends(get_auth_service),
 ):
     try:
         if payload.role == UserRole.ADMIN:

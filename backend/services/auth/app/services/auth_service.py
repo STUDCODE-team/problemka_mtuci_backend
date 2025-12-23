@@ -42,7 +42,7 @@ class AuthService:
 
         expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         await self.refresh_repo.save(
-            user_id=user.id,
+            user_id=UUID(str(user.id)),
             raw_token=refresh_token,
             jti=jti,
             expires_at=expires_at,

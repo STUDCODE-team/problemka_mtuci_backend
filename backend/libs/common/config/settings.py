@@ -14,12 +14,6 @@ class Settings(BaseSettings):
     OTP_TTL_SEC: int = 300
     GENERATE_DEFAULT_OTP: bool = False
 
-    SMTP_HOST: str = "smtp.example.com"
-    SMTP_PORT: int = 587
-    SMTP_PASSWORD: str = "your_password"
-    SMTP_USER: str = "your_username"
-    FROM_EMAIL: str = "your_email@example.com"
-
     model_config = SettingsConfigDict(
         env_file=BASE_DIR,
         env_file_encoding="utf-8",
