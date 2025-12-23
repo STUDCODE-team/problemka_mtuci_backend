@@ -21,6 +21,7 @@ passlib = "*"
 #aioredis = "*"
 setuptools = "*"
 #redis = { extras = ["async"], version = "^5.0" }
+debugpy = "*"
 asyncpg = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]

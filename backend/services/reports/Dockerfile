@@ -1,20 +1,30 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Ставим Poetry
+WORKDIR /src
+
+# Устанавливаем Poetry
 RUN pip install --no-cache-dir poetry
 
-# Копируем только pyproject, чтобы Poetry установил зависимости
+# --- metadata (для Docker cache) ---
 COPY services/reports/pyproject.toml services/reports/poetry.lock ./services/reports/
 COPY libs/common/pyproject.toml libs/common/poetry.lock ./libs/common/
 
-# Ставим зависимости
-WORKDIR /app/services/reports
-RUN poetry install --no-root --without dev
+# --- зависимости ---
+WORKDIR /src/services/reports
+RUN poetry install --no-root --only main
 
-# Добавляем путь к корню монорепо
-ENV PYTHONPATH="/app"
+# --- код ---
+WORKDIR /src
+COPY services/reports ./services/reports
+COPY libs/common ./libs/common
 
-# По умолчанию запускаем uvicorn с авто-перезагрузкой
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# для импорта общих библиотек
+ENV PYTHONPATH=/src:/src/services/reports/src
+
+EXPOSE 8000
+
+WORKDIR /src/services/reports
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

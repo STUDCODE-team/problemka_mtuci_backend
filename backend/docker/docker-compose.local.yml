@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  auth:
+    build:
+      context: ..
+      dockerfile: services/auth/Dockerfile
+    command: >
+      python -m debugpy
+      --listen 0.0.0.0:5678
+      -m uvicorn main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    volumes:
+      - ../services/auth:/app/services/auth
+      - ../libs/common:/app/libs/common
+    env_file:
+      - ../env/.env.local
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  reports:
+    build:
+      context: ..
+      dockerfile: services/reports/Dockerfile
+    command: >
+      python -m debugpy
+      --listen 0.0.0.0:5678
+      -m uvicorn main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    volumes:
+      - ../services/reports:/app/services/reports
+      - ../libs/common:/app/libs/common
+    env_file:
+      - ../env/.env.local
+    ports:
+      - "8002:8000"
+    restart: unless-stopped

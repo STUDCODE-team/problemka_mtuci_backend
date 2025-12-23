@@ -1,20 +1,29 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Ставим Poetry
+WORKDIR /src
+
 RUN pip install --no-cache-dir poetry
 
-# Копируем только pyproject, чтобы Poetry установил зависимости
+# --- metadata ---
 COPY services/auth/pyproject.toml services/auth/poetry.lock ./services/auth/
 COPY libs/common/pyproject.toml libs/common/poetry.lock ./libs/common/
 
-# Ставим зависимости
-WORKDIR /app/services/auth
-RUN poetry install --no-root --without dev
+# --- deps ---
+WORKDIR /src/services/auth
+RUN poetry install --no-root --only main
 
-# Добавляем путь к корню монорепо
-ENV PYTHONPATH="/app"
+# --- code ---
+WORKDIR /src
+COPY services/auth ./services/auth
+COPY libs/common ./libs/common
 
-# По умолчанию запускаем uvicorn с авто-перезагрузкой
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# 🔑 ВАЖНО
+ENV PYTHONPATH=/src:/src/services/auth/src
+
+EXPOSE 8000
+
+WORKDIR /src/services/auth
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

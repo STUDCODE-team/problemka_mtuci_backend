@@ -23,6 +23,7 @@ aioredis = "*"
 setuptools = "*"
 redis = { extras = ["async"], version = "^5.0" }
 asyncpg = "^0.30.0"
+debugpy = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
