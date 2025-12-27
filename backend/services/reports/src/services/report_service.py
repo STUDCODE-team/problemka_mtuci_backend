@@ -19,7 +19,7 @@ class ReportService(IReportService):
         report = Report(
             id=report_id,
             type=dto.type,
-            is_explicit=dto.is_explicit,
+            is_explicit=dto.isExplicit,
             reporter_id=reporter_id,
             status=ReportStatus.DRAFT,
         )

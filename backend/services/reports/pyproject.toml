@@ -3,7 +3,7 @@ name = "reports-service"
 version = "0.1.0"
 description = "Reports microservice"
 authors = ["piksi <pitelinaksenia83412@gmail.com>"]
-packages = [{ include = "common_lib", from = "../../libs/common/src" }]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -22,6 +22,7 @@ passlib = "*"
 setuptools = "*"
 #redis = { extras = ["async"], version = "^5.0" }
 asyncpg = "^0.30.0"
+common = { path = "../../libs/common" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

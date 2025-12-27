@@ -2,10 +2,9 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import ForeignKey, DateTime
-from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, func, text
 
 from common_lib.infrastructure.db.base import Base
 from domain.models.enums.report_status import ReportStatus
@@ -20,15 +19,16 @@ class Report(Base):
     )
 
     type: Mapped[ReportType] = mapped_column(nullable=False)
-    is_explicit: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False, kw_only=True,
-                                              name="isExplicit")
+    is_explicit: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, server_default=text("false"), name="isExplicit"
+    )
     status: Mapped[ReportStatus] = mapped_column(
         default=ReportStatus.DRAFT,
         nullable=False,
     )
 
     reporter_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        # ForeignKey("users.id", ondelete="CASCADE"), #TODO подумать как сделать
         nullable=False,
     )
 
