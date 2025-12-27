@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List
 from uuid import UUID
 
-from services.reports.src.domain.models.schemas.create_report import CreateReportDto
-from services.reports.src.domain.models.schemas.read_report import ReadReportDto
-from services.reports.src.domain.models.schemas.update_report import UpdateReportDto
+from domain.models.schemas.create_report import CreateReportDto
+from domain.models.schemas.read_report import ReadReportDto
+from domain.models.schemas.update_report import UpdateReportDto
 
 
 class IReportService(ABC):

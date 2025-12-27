@@ -3,8 +3,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.reports.src.data.repositories.interfaces.i_report_repository import IReportRepository
-from services.reports.src.domain.models.db.report import Report
+from data.repositories.interfaces.i_report_repository import IReportRepository
+from domain.models.db.report import Report
 
 
 class ReportRepository(IReportRepository):

@@ -3,8 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from services.reports.src.domain.models.enums.report_status import ReportStatus
-from services.reports.src.domain.models.enums.report_type import ReportType
+from domain.models.enums.report_status import ReportStatus
+from domain.models.enums.report_type import ReportType
 
 
 class ReadReportDto(BaseModel):

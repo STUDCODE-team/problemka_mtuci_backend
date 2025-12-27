@@ -1,15 +1,15 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from libs.common.infrastructure.db.session import get_db
-from libs.common.infrastructure.redis.redis_client import get_redis
-from services.auth.src.data.repositories.implementations.sqlalchemy_refresh_token_repository import \
+from common_lib.infrastructure.db.session import get_db
+from common_lib.infrastructure.redis.redis_client import get_redis
+from data.repositories.implementations.sqlalchemy_refresh_token_repository import \
     RefreshTokenRepository
-from services.auth.src.data.repositories.implementations.sqlalchemy_user_repository import UserRepository
-from services.auth.src.services.auth_service import AuthService
-from services.auth.src.services.jwt_provider import PyJWTTokenProvider
-from services.auth.src.services.otp_service import OTPService
-from services.auth.src.services.token_service import TokenService
+from data.repositories.implementations.sqlalchemy_user_repository import UserRepository
+from services.auth_service import AuthService
+from services.jwt_provider import PyJWTTokenProvider
+from services.otp_service import OTPService
+from services.token_service import TokenService
 
 
 # Вспомогательные зависимости

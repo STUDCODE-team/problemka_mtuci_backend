@@ -5,7 +5,7 @@ from sqlalchemy import String, func, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from libs.common.infrastructure.db.base import Base
+from common_lib.infrastructure.db.base import Base
 
 
 class RefreshToken(Base):

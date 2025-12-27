@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from typing import List
 from uuid import UUID
 
-from services.reports.src.domain.models.db.report import Report
+from domain.models.db.report import Report
 
 
 class IReportRepository(ABC):

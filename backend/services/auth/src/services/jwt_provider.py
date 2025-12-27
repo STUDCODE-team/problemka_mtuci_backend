@@ -4,8 +4,8 @@ from uuid import UUID
 import jwt
 from jwt.exceptions import PyJWTError
 
-from libs.common.config.settings import settings
-from services.auth.src.data.repositories.interfaces.i_token_repository import TokenProvider
+from common_lib.config.settings import settings
+from data.repositories.interfaces.i_token_repository import TokenProvider
 
 
 class PyJWTTokenProvider(TokenProvider):

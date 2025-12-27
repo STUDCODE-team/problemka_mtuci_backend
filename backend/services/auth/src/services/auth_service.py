@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, UTC
 from uuid import UUID
 
-from libs.common.config.settings import settings
-from services.auth.src.data.repositories.implementations.sqlalchemy_refresh_token_repository import \
+from common_lib.config.settings import settings
+from data.repositories.implementations.sqlalchemy_refresh_token_repository import \
     RefreshTokenRepository
-from services.auth.src.data.repositories.implementations.sqlalchemy_user_repository import UserRepository
-from services.auth.src.domain.models.enums.user_roles import UserRole
-from services.auth.src.services.otp_service import OTPService
-from services.auth.src.services.token_service import TokenService
+from data.repositories.implementations.sqlalchemy_user_repository import UserRepository
+from domain.models.enums.user_roles import UserRole
+from services.otp_service import OTPService
+from services.token_service import TokenService
 
 
 class AuthService:

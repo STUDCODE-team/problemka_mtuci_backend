@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from services.auth.src.domain.models.db import User
-from services.auth.src.domain.models.enums.user_roles import UserRole
+from domain.models.db import User
+from domain.models.enums.user_roles import UserRole
 
 
 class IUserRepository(ABC):

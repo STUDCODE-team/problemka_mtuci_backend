@@ -7,8 +7,8 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from libs.common.infrastructure.db.base import Base
-from services.auth.src.domain.models.enums.user_roles import UserRole
+from common_lib.infrastructure.db.base import Base
+from domain.models.enums.user_roles import UserRole
 
 
 class User(Base):

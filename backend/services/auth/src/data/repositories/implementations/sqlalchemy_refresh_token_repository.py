@@ -4,8 +4,8 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from libs.common.utils.crypto import hash_value
-from services.auth.src.domain.models.db import RefreshToken
+from common_lib.utils.crypto import hash_value
+from domain.models.db import RefreshToken
 
 
 class RefreshTokenRepository:

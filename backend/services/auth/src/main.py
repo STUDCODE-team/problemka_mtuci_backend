@@ -2,11 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from libs.common.infrastructure.db.base import Base
-from libs.common.infrastructure.db.engine import engine
-from libs.common.infrastructure.redis.redis_client import init_redis
-from services.auth.src.api.routes_auth import router as auth_router
-
+from common_lib.infrastructure.db.base import Base
+from common_lib.infrastructure.db.engine import engine
+from common_lib.infrastructure.redis.redis_client import init_redis
+from api.routes_auth import router as auth_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):

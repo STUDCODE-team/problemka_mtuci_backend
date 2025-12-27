@@ -1,6 +1,6 @@
 from redis import asyncio as aioredis
 
-from libs.common.config.settings import settings
+from common_lib.config.settings import settings
 
 redis_client = None
 

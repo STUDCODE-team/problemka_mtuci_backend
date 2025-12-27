@@ -4,7 +4,7 @@ from email.message import EmailMessage
 import aiosmtplib
 from fastapi import BackgroundTasks
 
-from libs.common.config.settings import settings
+from common_lib.config.settings import settings
 
 
 async def send_email_async(to_email: str, subject: str, body: str):

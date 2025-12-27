@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from libs.common.infrastructure.db.base import Base
-from libs.common.infrastructure.db.engine import engine
-from services.reports.src.api.routes_reports import router as reports_router
+from common_lib.infrastructure.db.base import Base
+from common_lib.infrastructure.db.engine import engine
+from api.routes_reports import router as reports_router
 
 
 @asynccontextmanager

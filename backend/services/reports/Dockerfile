@@ -13,8 +13,9 @@ COPY services/reports/pyproject.toml services/reports/poetry.lock ./services/rep
 COPY libs/common/pyproject.toml libs/common/poetry.lock ./libs/common/
 
 # --- зависимости ---
+ARG POETRY_GROUPS=main
 WORKDIR /src/services/reports
-RUN poetry install --no-root --only main
+RUN poetry install --no-root --only ${POETRY_GROUPS}
 
 # --- код ---
 WORKDIR /src

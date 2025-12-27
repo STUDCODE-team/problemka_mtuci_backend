@@ -1,13 +1,13 @@
 from typing import List
 from uuid import UUID
 
-from services.reports.src.data.repositories.implemetations.report_repository import ReportRepository
-from services.reports.src.domain.i_report_service import IReportService
-from services.reports.src.domain.models.db.report import Report
-from services.reports.src.domain.models.enums.report_status import ReportStatus
-from services.reports.src.domain.models.schemas.create_report import CreateReportDto
-from services.reports.src.domain.models.schemas.read_report import ReadReportDto
-from services.reports.src.domain.models.schemas.update_report import UpdateReportDto
+from data.repositories.implemetations.report_repository import ReportRepository
+from domain.i_report_service import IReportService
+from domain.models.db.report import Report
+from domain.models.enums.report_status import ReportStatus
+from domain.models.schemas.create_report import CreateReportDto
+from domain.models.schemas.read_report import ReadReportDto
+from domain.models.schemas.update_report import UpdateReportDto
 
 
 class ReportService(IReportService):

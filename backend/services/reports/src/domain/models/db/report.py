@@ -7,9 +7,9 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from libs.common.infrastructure.db.base import Base
-from services.reports.src.domain.models.enums.report_status import ReportStatus
-from services.reports.src.domain.models.enums.report_type import ReportType
+from common_lib.infrastructure.db.base import Base
+from domain.models.enums.report_status import ReportStatus
+from domain.models.enums.report_type import ReportType
 
 
 class Report(Base):

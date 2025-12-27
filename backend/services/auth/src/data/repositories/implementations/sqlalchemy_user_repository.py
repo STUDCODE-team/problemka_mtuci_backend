@@ -4,9 +4,9 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.auth.src.data.repositories.interfaces.i_user_repository import IUserRepository
-from services.auth.src.domain.models.db import User
-from services.auth.src.domain.models.enums.user_roles import UserRole
+from data.repositories.interfaces.i_user_repository import IUserRepository
+from domain.models.db import User
+from domain.models.enums.user_roles import UserRole
 
 
 class UserRepository(IUserRepository):

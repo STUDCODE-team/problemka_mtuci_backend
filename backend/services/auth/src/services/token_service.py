@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, UTC
 from uuid import uuid4
 
-from libs.common.config.settings import settings
-from services.auth.src.data.repositories.interfaces.i_token_repository import TokenProvider
+from common_lib.config.settings import settings
+from data.repositories.interfaces.i_token_repository import TokenProvider
 
 
 class TokenService:

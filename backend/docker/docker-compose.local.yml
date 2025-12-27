@@ -5,7 +5,10 @@ services:
     build:
       context: ..
       dockerfile: services/auth/Dockerfile
+      args:
+        POETRY_GROUPS: "main,local"
     command: >
+      poetry run
       python -m debugpy
       --listen 0.0.0.0:5678
       -m uvicorn main:app
@@ -25,7 +28,10 @@ services:
     build:
       context: ..
       dockerfile: services/reports/Dockerfile
+      args:
+        POETRY_GROUPS: "main,local"
     command: >
+      poetry run
       python -m debugpy
       --listen 0.0.0.0:5678
       -m uvicorn main:app

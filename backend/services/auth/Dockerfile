@@ -4,7 +4,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /src
-
 RUN pip install --no-cache-dir poetry
 
 # --- metadata ---
@@ -12,8 +11,9 @@ COPY services/auth/pyproject.toml services/auth/poetry.lock ./services/auth/
 COPY libs/common/pyproject.toml libs/common/poetry.lock ./libs/common/
 
 # --- deps ---
+ARG POETRY_GROUPS=main
 WORKDIR /src/services/auth
-RUN poetry install --no-root --only main
+RUN poetry install --no-root --only ${POETRY_GROUPS}
 
 # --- code ---
 WORKDIR /src

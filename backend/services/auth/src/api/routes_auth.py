@@ -1,12 +1,12 @@
 # routers/auth.py
 from fastapi import APIRouter, Depends, HTTPException
 
-from services.auth.src.api.dependencies import get_auth_service
-from services.auth.src.domain.models.enums.user_roles import UserRole
-from services.auth.src.domain.models.schemas.refresh_in import RefreshIn
-from services.auth.src.domain.models.schemas.request_otp import RequestOtp
-from services.auth.src.domain.models.schemas.verify_otp import VerifyOtp
-from services.auth.src.services.auth_service import AuthService
+from api.dependencies import get_auth_service
+from domain.models.enums.user_roles import UserRole
+from domain.models.schemas.refresh_in import RefreshIn
+from domain.models.schemas.request_otp import RequestOtp
+from domain.models.schemas.verify_otp import VerifyOtp
+from services.auth_service import AuthService
 
 router = APIRouter()
 
