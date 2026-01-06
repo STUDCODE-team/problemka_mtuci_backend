@@ -13,8 +13,8 @@ router = APIRouter()
 
 @router.post("/request_otp")
 async def request_otp(
-        payload: RequestOtp,
-        service: AuthService = Depends(get_auth_service),
+    payload: RequestOtp,
+    service: AuthService = Depends(get_auth_service),
 ):
     try:
         if payload.role == UserRole.ADMIN:
@@ -28,24 +28,24 @@ async def request_otp(
 
 @router.post("/verify_otp")
 async def verify_otp(
-        payload: VerifyOtp,
-        service: AuthService = Depends(get_auth_service),
+    payload: VerifyOtp,
+    service: AuthService = Depends(get_auth_service),
 ):
     return await service.verify_otp(payload.email, payload.code)
 
 
 @router.post("/refresh")
 async def refresh(
-        payload: RefreshIn,
-        service: AuthService = Depends(get_auth_service),
+    payload: RefreshIn,
+    service: AuthService = Depends(get_auth_service),
 ):
     return await service.refresh(payload.refresh_token)
 
 
 @router.post("/logout")
 async def logout(
-        payload: RefreshIn,
-        service: AuthService = Depends(get_auth_service),
+    payload: RefreshIn,
+    service: AuthService = Depends(get_auth_service),
 ):
     await service.logout(payload.refresh_token)
     return {"detail": "Logged out successfully"}

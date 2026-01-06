@@ -22,6 +22,7 @@ services:
       - ../env/.env.local
     ports:
       - "8001:8000"
+      - "5678:5678"
     restart: unless-stopped
 
   reports:
@@ -33,7 +34,7 @@ services:
     command: >
       poetry run
       python -m debugpy
-      --listen 0.0.0.0:5678
+      --listen 0.0.0.0:5679
       -m uvicorn main:app
       --host 0.0.0.0
       --port 8000
@@ -45,4 +46,5 @@ services:
       - ../env/.env.local
     ports:
       - "8002:8000"
+      - "5679:5679"
     restart: unless-stopped
