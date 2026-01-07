@@ -7,6 +7,7 @@ from common_lib.infrastructure.db.engine import engine
 from common_lib.infrastructure.redis.redis_client import init_redis
 from api.routes_auth import router as auth_router
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Startup
@@ -22,6 +23,7 @@ app = FastAPI(
     title="Auth Facade",
     lifespan=lifespan,
     debug=True,
+    root_path="/api/auth",
 )
 
 app.include_router(auth_router, prefix="/auth")

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reports
+  template:
+    metadata:
+      labels:
+        app: reports
+    spec:
+      containers:
+        - name: reports
+          image: registry.example.com/problemka/reports:dev
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: problemka-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reports-service
+spec:
+  selector:
+    app: reports
+  ports:
+    - port: 8000
+      targetPort: 8000

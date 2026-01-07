@@ -21,6 +21,7 @@ app = FastAPI(
     title="Reports microservice",
     lifespan=lifespan,
     debug=True,
+    root_path="/api/reports",
 )
 
 app.include_router(reports_router, prefix="/reports")

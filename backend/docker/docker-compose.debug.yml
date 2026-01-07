@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: services/auth/Dockerfile
       args:
-        POETRY_GROUPS: "main,local"
+        POETRY_GROUPS: "main,debug"
     command: >
       poetry run
       python -m debugpy
@@ -19,7 +19,7 @@ services:
       - ../services/auth:/app/services/auth
       - ../libs/common:/app/libs/common
     env_file:
-      - ../env/.env.local
+      - ../env/.env.dev
     ports:
       - "8001:8000"
       - "5678:5678"
@@ -30,7 +30,7 @@ services:
       context: ..
       dockerfile: services/reports/Dockerfile
       args:
-        POETRY_GROUPS: "main,local"
+        POETRY_GROUPS: "main,debug"
     command: >
       poetry run
       python -m debugpy
@@ -43,7 +43,7 @@ services:
       - ../services/reports:/app/services/reports
       - ../libs/common:/app/libs/common
     env_file:
-      - ../env/.env.local
+      - ../env/.env.dev
     ports:
       - "8002:8000"
       - "5679:5679"
