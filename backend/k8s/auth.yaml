@@ -15,6 +15,7 @@ spec:
       containers:
         - name: auth
           image: registry.example.com/problemka/auth:dev
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           envFrom:

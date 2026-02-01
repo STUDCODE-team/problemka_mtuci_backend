@@ -26,4 +26,8 @@ app = FastAPI(
     root_path="/api/auth",
 )
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 app.include_router(auth_router, prefix="/auth")

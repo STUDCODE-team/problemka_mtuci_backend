@@ -15,6 +15,7 @@ spec:
       containers:
         - name: reports
           image: registry.example.com/problemka/reports:dev
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           envFrom:
