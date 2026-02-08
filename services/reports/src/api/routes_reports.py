@@ -1,0 +1,49 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from data.repositories.implemetations.report_repository import ReportRepository
+from domain.models.schemas.create_report import CreateReportDto
+from domain.models.schemas.update_report import UpdateReportDto
+from services.report_service import ReportService
+
+router = APIRouter(tags=["reports"])
+
+
+def get_service(session: AsyncSession = Depends()):
+    repo = ReportRepository(session)
+    return ReportService(repo)
+
+
+@router.post("/")
+async def create_report(
+    dto: CreateReportDto,
+    reporter_id: UUID,
+    service: ReportService = Depends(get_service),
+):
+    return await service.create_report(reporter_id, dto, reporter_id)  # TODO переделать
+
+
+@router.get("/{report_id}")
+async def get_report(report_id: UUID, service: ReportService = Depends(get_service)):
+    return await service.get_report_by_id(report_id)
+
+
+@router.get("/")
+async def get_reports(
+    limit: int = 50, offset: int = 0, service: ReportService = Depends(get_service)
+):
+    return await service.get_all_reports(limit, offset)
+
+
+@router.patch("/{report_id}")
+async def update_report(
+    report_id: UUID, dto: UpdateReportDto, service: ReportService = Depends(get_service)
+):
+    return await service.update_report(report_id, dto)
+
+
+@router.delete("/{report_id}")
+async def delete_report(report_id: UUID, service: ReportService = Depends(get_service)):
+    return await service.delete_report(report_id)

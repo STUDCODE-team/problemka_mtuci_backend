@@ -1,0 +1,33 @@
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.env.*
+# BUT keep example
+!.env.example
+
+# Env files
+*.env
+.env
+
+# Byte-compiled / optimized / DLL files
+*.cache
+
+# mypy
+.mypy_cache/
+
+# pytest
+.pytest_cache/
+
+# dist / build
+dist/
+build/
+*.egg-info/
+
+.DS_Store

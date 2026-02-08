@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker: debug hot",
+      "type": "shell",
+      "command": "docker compose -f docker/docker-compose.debug.yml up",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "docker: debug warm",
+      "type": "shell",
+      "command": "docker compose -f docker/docker-compose.debug.yml up --build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "docker: debug cold",
+      "type": "shell",
+      "command": "docker compose -f docker/docker-compose.debug.yml down -v && docker compose -f docker/docker-compose.debug.yml build --no-cache && docker compose -f docker/docker-compose.debug.yml up",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}
