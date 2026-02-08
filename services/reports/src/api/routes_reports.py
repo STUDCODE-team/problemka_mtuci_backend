@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from common_lib.infrastructure.db.session import get_db
 from data.repositories.implemetations.report_repository import ReportRepository
 from domain.models.schemas.create_report import CreateReportDto
 from domain.models.schemas.update_report import UpdateReportDto
@@ -11,7 +12,7 @@ from services.report_service import ReportService
 router = APIRouter(tags=["reports"])
 
 
-def get_service(session: AsyncSession = Depends()):
+def get_service(session: AsyncSession = Depends(get_db)):
     repo = ReportRepository(session)
     return ReportService(repo)
 
