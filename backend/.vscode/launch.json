@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+
+  "configurations": [
+    {
+      "name": "Auth • Debug",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "preLaunchTask": "docker: debug hot",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/services/auth",
+          "remoteRoot": "/app/services/auth"
+        }
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "Reports • Debug",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5679 },
+      "preLaunchTask": "docker: debug hot",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/services/reports",
+          "remoteRoot": "/app/services/reports"
+        }
+      ],
+      "justMyCode": true
+    }
+  ],
+
+  "compounds": [
+    {
+      "name": "All • Debug (hot)",
+      "configurations": [
+        "Auth • Debug",
+        "Reports • Debug"
+      ]
+    }
+  ]
+}

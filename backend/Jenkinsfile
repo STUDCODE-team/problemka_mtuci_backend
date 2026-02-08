@@ -13,9 +13,9 @@ pipeline {
     }
 
     stage('Deploy (dev)') {
-      // when {
-      //   branch 'dev'
-      // }
+      when {
+        branch 'dev'
+      }
       steps {
         dir('backend') {
           withCredentials([file(credentialsId: 'env-dev', variable: 'ENV_FILE')]) {

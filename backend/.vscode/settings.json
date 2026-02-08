@@ -1,0 +1,19 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    "python-envs.pythonProjects": [],
+    "python.analysis.extraPaths": [
+        "./libs/common/src",
+        "./services/auth/src",
+        "./services/reports/src",
+    ],
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    // "editor.formatOnSave": true,
+    "[python]": {
+        "editor.formatOnSave": true
+    },
+}
