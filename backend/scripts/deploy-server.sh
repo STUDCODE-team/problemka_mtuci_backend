@@ -13,10 +13,25 @@ REPORTS_DOCKERFILE=${REPORTS_DOCKERFILE:-services/reports/Dockerfile}
 
 if ! command -v k3s >/dev/null 2>&1; then
   echo "📦 Installing k3s..."
-  curl -sfL https://get.k3s.io | sh -
+  # Disable Traefik so host nginx can keep 80/443.
+  curl -sfL https://get.k3s.io | sh -s - --disable traefik
 fi
 
 KUBECTL="sudo k3s kubectl"
+
+echo "🌐 Ensuring ingress-nginx is installed..."
+$KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.14.2/deploy/static/provider/baremetal/deploy.yaml
+
+echo "🔧 Ensuring ingress-nginx NodePort is fixed to 30080/30443..."
+$KUBECTL -n ingress-nginx patch svc ingress-nginx-controller --type='merge' -p '{
+  "spec": {
+    "type": "NodePort",
+    "ports": [
+      {"name":"http","port":80,"protocol":"TCP","targetPort":"http","nodePort":30080},
+      {"name":"https","port":443,"protocol":"TCP","targetPort":"https","nodePort":30443}
+    ]
+  }
+}'
 
 echo "🧩 Creating/updating env ConfigMap..."
 $KUBECTL create configmap "$CONFIGMAP_NAME" \

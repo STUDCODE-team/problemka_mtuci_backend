@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: api.domain.local
+    - host: devapi.igorglushkov.ru
       http:
         paths:
           - path: /api/auth(/|$)(.*)
