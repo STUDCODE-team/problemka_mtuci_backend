@@ -4,6 +4,12 @@ set -euo pipefail
 ENV_FILE=${ENV_FILE:-env/.env.dev}
 CONFIGMAP_NAME=${CONFIGMAP_NAME:-problemka-env}
 APPLY_INGRESS=${APPLY_INGRESS:-1}
+APPLY_DASHBOARD=${APPLY_DASHBOARD:-1}
+
+DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.devapi.igorglushkov.ru}
+DASHBOARD_IP_WHITELIST=${DASHBOARD_IP_WHITELIST:-176.108.242.162/32}
+DASHBOARD_USER=${DASHBOARD_USER:-admin}
+DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-passwd}
 
 AUTH_IMAGE=${AUTH_IMAGE:-registry.example.com/problemka/auth:dev}
 REPORTS_IMAGE=${REPORTS_IMAGE:-registry.example.com/problemka/reports:dev}
@@ -32,6 +38,49 @@ $KUBECTL -n ingress-nginx patch svc ingress-nginx-controller --type='merge' -p '
     ]
   }
 }'
+
+if [ "$APPLY_DASHBOARD" = "1" ]; then
+  echo "📊 Ensuring Kubernetes Dashboard is installed..."
+  $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+  if [ -n "$DASHBOARD_PASSWORD" ]; then
+    echo "🔐 Creating/updating Dashboard basic auth secret..."
+    HTPASSWD_LINE="${DASHBOARD_USER}:$(openssl passwd -apr1 "$DASHBOARD_PASSWORD")"
+    printf "%s" "$HTPASSWD_LINE" | $KUBECTL -n kubernetes-dashboard create secret generic dashboard-basic-auth \
+      --from-file=auth=/dev/stdin \
+      --dry-run=client -o yaml | $KUBECTL apply -f -
+  else
+    echo "⚠️  DASHBOARD_PASSWORD is empty; skipping basic auth secret creation."
+  fi
+
+  echo "🌐 Applying Dashboard ingress..."
+  cat <<EOF_DASH | $KUBECTL apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/auth-type: "basic"
+    nginx.ingress.kubernetes.io/auth-secret: "dashboard-basic-auth"
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "$DASHBOARD_IP_WHITELIST"
+spec:
+  rules:
+    - host: "$DASHBOARD_DOMAIN"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubernetes-dashboard
+                port:
+                  number: 443
+EOF_DASH
+fi
 
 echo "🧩 Creating/updating env ConfigMap..."
 $KUBECTL create configmap "$CONFIGMAP_NAME" \
