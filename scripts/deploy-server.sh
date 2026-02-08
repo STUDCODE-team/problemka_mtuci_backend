@@ -7,7 +7,6 @@ APPLY_INGRESS=${APPLY_INGRESS:-1}
 APPLY_DASHBOARD=${APPLY_DASHBOARD:-1}
 
 DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.devapi.igorglushkov.ru}
-DASHBOARD_IP_WHITELIST=${DASHBOARD_IP_WHITELIST:-176.108.242.162/32}
 DASHBOARD_USER=${DASHBOARD_USER:-admin}
 DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-passwd}
 
@@ -66,7 +65,6 @@ metadata:
     nginx.ingress.kubernetes.io/auth-type: "basic"
     nginx.ingress.kubernetes.io/auth-secret: "dashboard-basic-auth"
     nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-    nginx.ingress.kubernetes.io/whitelist-source-range: "$DASHBOARD_IP_WHITELIST"
 spec:
   rules:
     - host: "$DASHBOARD_DOMAIN"
