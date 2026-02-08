@@ -17,11 +17,9 @@ pipeline {
       //   branch 'dev'
       // }
       steps {
-        dir('backend') {
-          withCredentials([file(credentialsId: 'env-dev', variable: 'ENV_FILE')]) {
-            sh 'chmod +x scripts/deploy-server.sh'
-            sh './scripts/deploy-server.sh'
-          }
+        withCredentials([file(credentialsId: 'env-dev', variable: 'ENV_FILE')]) {
+          sh 'chmod +x scripts/deploy-server.sh'
+          sh './scripts/deploy-server.sh'
         }
       }
     }
