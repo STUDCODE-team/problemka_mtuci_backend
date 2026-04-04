@@ -98,6 +98,9 @@ class AuthService:
         except ValueError:
             pass
 
+    async def get_user_by_id(self, user_id: UUID):
+        return await self.user_repo.get_by_id(user_id)
+
     async def has_role(self, email: str, required_role: UserRole) -> bool:
         user = await self.user_repo.get_by_email(email)
         if not user:

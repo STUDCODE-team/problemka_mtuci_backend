@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_lib.infrastructure.db.session import get_db
 from common_lib.infrastructure.redis.redis_client import get_redis
+from data.repositories.implementations.redis_otp_repository import RedisOTPRepository
 from data.repositories.implementations.sqlalchemy_refresh_token_repository import \
     RefreshTokenRepository
 from data.repositories.implementations.sqlalchemy_user_repository import UserRepository
@@ -22,7 +23,7 @@ async def get_refresh_token_repository(session: AsyncSession = Depends(get_db)):
 
 
 async def get_otp_service(redis_client=Depends(get_redis)):
-    return OTPService(redis_client)
+    return OTPService(RedisOTPRepository(redis_client))
 
 
 async def get_token_service():

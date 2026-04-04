@@ -1,23 +1,24 @@
 from common_lib.config.settings import settings
 from common_lib.utils.crypto import hash_value, verify_hash, generate_value
 from data.repositories.interfaces.i_otp_repository import OTPRepository
+from services.email_service import send_otp_email
 
 
 class OTPService:
     def __init__(self, otp_repository: OTPRepository):
         self.repo = otp_repository
 
-    async def create_otp(self, email: str) -> str:
-        if settings.GENERATE_DEFAULT_OTP:
-            otp = "123456"
-        else:
-            otp = generate_value(6)
-
+    async def create_otp(self, email: str) -> None:
+        otp = generate_value(6)
         otp_hash = hash_value(otp)
         await self.repo.save(email, otp_hash, settings.OTP_TTL_SEC)
-        return otp
+        await send_otp_email(email, otp)
 
     async def verify_otp(self, email: str, code: str) -> bool:
+        if settings.GENERATE_DEFAULT_OTP and code == "123456":
+            await self.repo.delete(email)
+            return True
+
         otp_hash = await self.repo.get(email)
         if not otp_hash:
             return False

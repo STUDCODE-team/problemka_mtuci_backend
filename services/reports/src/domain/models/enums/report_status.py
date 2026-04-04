@@ -1,11 +1,17 @@
 from enum import Enum
 
 
-class ReportStatus(Enum):
-    DRAFT = 'draft'
-    PENDING = 'pending'
-    NEED_REVIEW = 'need_review'
-    PUBLISHED = 'published'
+class ReportStatus(str, Enum):
+    NEW = 'new'
+    IN_PROGRESS = 'in_progress'
     RESOLVED = 'resolved'
     REJECTED = 'rejected'
-    DUPLICATED = 'duplicated'
+
+
+# Допустимые переходы статусов (FSM)
+ALLOWED_STATUS_TRANSITIONS: dict[ReportStatus, list[ReportStatus]] = {
+    ReportStatus.NEW: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
+    ReportStatus.IN_PROGRESS: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
+    ReportStatus.RESOLVED: [],
+    ReportStatus.REJECTED: [],
+}

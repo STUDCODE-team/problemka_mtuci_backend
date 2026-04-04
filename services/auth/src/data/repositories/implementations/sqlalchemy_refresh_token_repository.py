@@ -20,6 +20,7 @@ class RefreshTokenRepository:
             expires_at=expires_at,
         )
         self.session.add(refresh)
+        await self.session.commit()
 
     async def find_active_by_jti(self, jti: str) -> RefreshToken | None:
         result = await self.session.execute(
@@ -36,3 +37,4 @@ class RefreshTokenRepository:
             .where(RefreshToken.jti == jti)
             .values(revoked_at=datetime.now(timezone.utc))
         )
+        await self.session.commit()
