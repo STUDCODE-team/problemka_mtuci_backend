@@ -52,6 +52,12 @@ if [ "$APPLY_DASHBOARD" = "1" ]; then
     echo "⚠️  DASHBOARD_PASSWORD is empty; skipping basic auth secret creation."
   fi
 
+  echo "⚙️ Enabling skip-login for Dashboard..."
+  $KUBECTL -n kubernetes-dashboard patch deployment kubernetes-dashboard \
+    --type='json' \
+    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-skip-login"}]' \
+    2>/dev/null || true
+
   echo "🌐 Applying Dashboard ingress..."
   cat <<EOF_DASH | $KUBECTL apply -f -
 apiVersion: networking.k8s.io/v1
