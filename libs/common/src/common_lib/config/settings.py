@@ -6,8 +6,9 @@ BASE_DIR = Path("/app/.env")
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = ''
-    REDIS_URL: str = ''
+    AUTH_DATABASE_URL: str = ''
+    REPORTS_DATABASE_URL: str = ''
+    AUTH_REDIS_URL: str = ''
     JWT_SECRET: str = ''
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

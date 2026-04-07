@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from common_lib.infrastructure.db.base import Base
-from common_lib.infrastructure.db.engine import engine
+from infrastructure.db import engine
 from api.routes_reports import router as reports_router
 from api.routes_categories import router as categories_router
 
@@ -39,9 +40,28 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = [
+        {"field": " -> ".join(str(loc) for loc in e["loc"][1:]), "message": e["msg"]}
+        for e in exc.errors()
+    ]
+    response = JSONResponse(status_code=422, content={"detail": "Validation error", "errors": errors})
+    origin = request.headers.get("origin")
+    if origin and "problemka-mtuci.tech" in origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(status_code=500, content={"detail": str(exc)})
+    response = JSONResponse(status_code=500, content={"detail": str(exc)})
+    origin = request.headers.get("origin")
+    if origin and "problemka-mtuci.tech" in origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 
 @app.get("/health")

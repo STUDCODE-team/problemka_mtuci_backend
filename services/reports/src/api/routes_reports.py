@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from api.dependencies import get_current_user, get_service, require_admin
+from api.dependencies import get_current_user, get_service, require_admin, require_manager
 from common_lib.utils.jwt_utils import CurrentUser
 from domain.models.enums.report_category import ReportCategory
 from domain.models.enums.report_status import ReportStatus
@@ -102,7 +102,7 @@ async def delete_report(
 async def change_report_status(
     report_id: UUID,
     dto: ChangeStatusDto,
-    user: CurrentUser = Depends(require_admin),
+    user: CurrentUser = Depends(require_manager),
     service: ReportService = Depends(get_service),
 ):
     return await service.change_status(report_id, dto.status, changed_by=user.id)

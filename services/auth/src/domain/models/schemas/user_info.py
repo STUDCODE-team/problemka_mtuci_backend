@@ -1,16 +1,12 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
-
-from domain.models.enums.user_roles import UserRole
+from pydantic import BaseModel
 
 
 class UserInfoDto(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: UUID
     email: str
-    role: UserRole
+    role: str
     is_active: bool
     created_at: datetime

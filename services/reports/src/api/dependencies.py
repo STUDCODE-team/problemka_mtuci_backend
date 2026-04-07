@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_lib.infrastructure.db.session import get_db
+from infrastructure.db import get_db
 from common_lib.utils.jwt_utils import CurrentUser, decode_access_token
 from data.repositories.implemetations.report_repository import ReportRepository
 from data.repositories.implemetations.comment_repository import CommentRepository
@@ -22,6 +22,15 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
+
+
+def require_manager(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role not in ("admin", "manager"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manager or admin access required",
+        )
+    return user
 
 
 def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:

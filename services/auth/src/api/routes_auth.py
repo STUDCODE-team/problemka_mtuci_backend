@@ -1,6 +1,8 @@
-# routers/auth.py
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
 
 from api.dependencies import get_auth_service
 from common_lib.utils.jwt_utils import CurrentUser, decode_access_token
@@ -27,14 +29,20 @@ async def get_current_user(
         )
 
 
+def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role != UserRole.ADMIN.value:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return user
+
+
 @router.post("/request_otp")
 async def request_otp(
     payload: RequestOtp,
     service: AuthService = Depends(get_auth_service),
 ):
     try:
-        if payload.role == UserRole.ADMIN:
-            await service.has_role(payload.email, payload.role)
+        if payload.role.is_privileged:
+            await service.has_privileged_role(payload.email)
         return await service.request_otp(payload.email)
     except HTTPException:
         raise
@@ -82,4 +90,32 @@ async def get_me(
     user_info = await service.get_user_by_id(user.id)
     if not user_info:
         raise HTTPException(status_code=404, detail="User not found")
-    return UserInfoDto.model_validate(user_info)
+    return UserInfoDto(
+        id=user_info.id,
+        email=user_info.email,
+        role=user_info.role,
+        is_active=user_info.is_active,
+        created_at=user_info.created_at,
+    )
+
+
+@router.get("/users", response_model=list[UserInfoDto])
+async def list_users(
+    _: CurrentUser = Depends(require_admin),
+    service: AuthService = Depends(get_auth_service),
+):
+    return await service.get_all_users()
+
+
+class SetRoleBody(BaseModel):
+    role: UserRole
+
+
+@router.patch("/users/{user_id}/role", response_model=UserInfoDto)
+async def set_user_role(
+    user_id: UUID,
+    body: SetRoleBody,
+    _: CurrentUser = Depends(require_admin),
+    service: AuthService = Depends(get_auth_service),
+):
+    return await service.set_user_role(user_id, body.role)
