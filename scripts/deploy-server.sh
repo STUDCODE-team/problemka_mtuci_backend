@@ -43,20 +43,32 @@ if [ "$APPLY_DASHBOARD" = "1" ]; then
   $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 
   if [ -n "$DASHBOARD_PASSWORD" ]; then
-    echo "🔐 Creating/updating Dashboard basic auth secret..."
-    HTPASSWD_LINE="${DASHBOARD_USER}:$(openssl passwd -apr1 "$DASHBOARD_PASSWORD")"
-    printf "%s" "$HTPASSWD_LINE" | $KUBECTL -n kubernetes-dashboard create secret generic dashboard-basic-auth \
-      --from-file=auth=/dev/stdin \
-      --dry-run=client -o yaml | $KUBECTL apply -f -
+    if ! $KUBECTL get secret dashboard-basic-auth -n kubernetes-dashboard &>/dev/null; then
+      echo "🔐 Creating Dashboard basic auth secret..."
+      HTPASSWD_LINE="${DASHBOARD_USER}:$(openssl passwd -apr1 "$DASHBOARD_PASSWORD")"
+      printf "%s" "$HTPASSWD_LINE" | $KUBECTL -n kubernetes-dashboard create secret generic dashboard-basic-auth \
+        --from-file=auth=/dev/stdin
+    else
+      echo "🔐 Dashboard basic auth secret already exists, skipping."
+    fi
   else
     echo "⚠️  DASHBOARD_PASSWORD is empty; skipping basic auth secret creation."
   fi
 
   echo "⚙️ Enabling skip-login for Dashboard..."
-  $KUBECTL -n kubernetes-dashboard patch deployment kubernetes-dashboard \
-    --type='json' \
-    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-skip-login"}]' \
-    2>/dev/null || true
+  if ! $KUBECTL -n kubernetes-dashboard get deployment kubernetes-dashboard -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null | grep -q "enable-skip-login"; then
+    $KUBECTL -n kubernetes-dashboard patch deployment kubernetes-dashboard \
+      --type='json' \
+      -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-skip-login"}]' \
+      2>/dev/null || true
+  fi
+
+  echo "🔑 Ensuring Dashboard has cluster-admin permissions..."
+  if ! $KUBECTL get clusterrolebinding kubernetes-dashboard-admin &>/dev/null; then
+    $KUBECTL create clusterrolebinding kubernetes-dashboard-admin \
+      --clusterrole=cluster-admin \
+      --serviceaccount=kubernetes-dashboard:kubernetes-dashboard
+  fi
 
   echo "🌐 Applying Dashboard ingress..."
   cat <<EOF_DASH | $KUBECTL apply -f -
