@@ -7,12 +7,16 @@ from fastapi import HTTPException, status
 from data.repositories.implemetations.report_repository import ReportRepository
 from data.repositories.implemetations.comment_repository import CommentRepository
 from data.repositories.implemetations.status_history_repository import StatusHistoryRepository
+from data.repositories.implemetations.notification_repository import NotificationRepository
+from services.push_service import PushService
 from domain.models.db.report import Report
 from domain.models.db.report_comment import ReportComment
+from domain.models.db.report_notification import ReportNotification
 from domain.models.db.report_status_history import ReportStatusHistory
 from domain.models.enums.report_category import ReportCategory
 from domain.models.enums.report_status import ReportStatus, ALLOWED_STATUS_TRANSITIONS
 from domain.models.schemas.create_report import CreateReportDto
+from domain.models.schemas.notification import ReadNotificationDto
 from domain.models.schemas.read_report import ReadReportDto, ReadReportListDto
 from domain.models.schemas.update_report import UpdateReportDto
 from domain.models.schemas.comment import ReadCommentDto, CreateCommentDto
@@ -26,10 +30,14 @@ class ReportService:
         report_repo: ReportRepository,
         comment_repo: CommentRepository,
         history_repo: StatusHistoryRepository,
+        notification_repo: NotificationRepository,
+        push_service: PushService,
     ):
         self.report_repo = report_repo
         self.comment_repo = comment_repo
         self.history_repo = history_repo
+        self.notification_repo = notification_repo
+        self.push_service = push_service
 
     async def create_report(self, dto: CreateReportDto, reporter_id: UUID) -> ReadReportDto:
         report = Report(
@@ -91,7 +99,35 @@ class ReportService:
         )
         await self.history_repo.create(history_entry)
 
+        notification = ReportNotification(
+            reporter_id=report.reporter_id,
+            report_id=report_id,
+            report_title=report.title,
+            old_status=old_status,
+            new_status=new_status,
+        )
+        await self.notification_repo.create(notification)
+
+        await self.push_service.send_push_to_user(
+            user_id=report.reporter_id,
+            title=f'Статус заявки изменён: {report.title}',
+            body=f'{old_status.value} → {new_status.value}',
+            data={"reportId": str(report_id)},
+        )
+
         return ReadReportDto.model_validate(updated)
+
+    # --- Notifications ---
+
+    async def get_my_notifications(self, reporter_id: UUID) -> List[ReadNotificationDto]:
+        notifications = await self.notification_repo.get_by_reporter(reporter_id)
+        return [ReadNotificationDto.model_validate(n) for n in notifications]
+
+    async def mark_notification_read(self, notification_id: UUID, reporter_id: UUID) -> bool:
+        return await self.notification_repo.mark_read(notification_id, reporter_id)
+
+    async def mark_all_notifications_read(self, reporter_id: UUID) -> int:
+        return await self.notification_repo.mark_all_read(reporter_id)
 
     async def get_all_reports(
         self,

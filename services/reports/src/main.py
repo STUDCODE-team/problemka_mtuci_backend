@@ -9,12 +9,15 @@ from common_lib.infrastructure.db.base import Base
 from infrastructure.db import engine
 from api.routes_reports import router as reports_router
 from api.routes_categories import router as categories_router
+from api.routes_notifications import router as notifications_router
 
 # Import models so SQLAlchemy registers them with Base.metadata
 import domain.models.db.report  # noqa: F401
 import domain.models.db.report_comment  # noqa: F401
 import domain.models.db.report_status_history  # noqa: F401
 import domain.models.db.category  # noqa: F401
+import domain.models.db.report_notification  # noqa: F401
+import domain.models.db.push_subscription  # noqa: F401
 
 
 @asynccontextmanager
@@ -71,3 +74,4 @@ async def health_check():
 
 app.include_router(reports_router, prefix="/reports")
 app.include_router(categories_router, prefix="/categories")
+app.include_router(notifications_router, prefix="/notifications")

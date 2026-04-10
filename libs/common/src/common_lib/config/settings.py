@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ''
     SMTP_FROM: str = ''
 
+    # Web Push (VAPID) — generate with: vapid --gen
+    # Store base64url-encoded DER keys
+    VAPID_PRIVATE_KEY: str = ''
+    VAPID_PUBLIC_KEY: str = ''
+    VAPID_CONTACT_EMAIL: str = 'admin@problemka-mtuci.tech'
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR,
         env_file_encoding="utf-8",
