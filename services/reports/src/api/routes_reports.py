@@ -108,6 +108,18 @@ async def change_report_status(
     return await service.change_status(report_id, dto.status, changed_by=user.id)
 
 
+# --- Force status change (admin only, bypasses FSM) ---
+
+@router.patch("/{report_id}/status/force", response_model=ReadReportDto)
+async def force_change_report_status(
+    report_id: UUID,
+    dto: ChangeStatusDto,
+    user: CurrentUser = Depends(require_admin),
+    service: ReportService = Depends(get_service),
+):
+    return await service.force_change_status(report_id, dto.status, changed_by=user.id)
+
+
 # --- Comments ---
 
 @router.post("/{report_id}/comments", response_model=ReadCommentDto)

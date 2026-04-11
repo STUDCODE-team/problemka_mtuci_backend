@@ -111,6 +111,24 @@ class SetRoleBody(BaseModel):
     role: UserRole
 
 
+@router.get("/users/{user_id}", response_model=UserInfoDto)
+async def get_user_by_id(
+    user_id: UUID,
+    _: CurrentUser = Depends(require_admin),
+    service: AuthService = Depends(get_auth_service),
+):
+    user_info = await service.get_user_by_id(user_id)
+    if not user_info:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserInfoDto(
+        id=user_info.id,
+        email=user_info.email,
+        role=user_info.role,
+        is_active=user_info.is_active,
+        created_at=user_info.created_at,
+    )
+
+
 @router.patch("/users/{user_id}/role", response_model=UserInfoDto)
 async def set_user_role(
     user_id: UUID,

@@ -117,6 +117,42 @@ class ReportService:
 
         return ReadReportDto.model_validate(updated)
 
+    async def force_change_status(
+        self, report_id: UUID, new_status: ReportStatus, changed_by: UUID
+    ) -> ReadReportDto:
+        """Change status without FSM validation — admin only."""
+        report = await self._get_report_or_404(report_id)
+        old_status = report.status
+
+        report.status = new_status
+        updated = await self.report_repo.update(report)
+
+        history_entry = ReportStatusHistory(
+            report_id=report_id,
+            old_status=old_status,
+            new_status=new_status,
+            changed_by=changed_by,
+        )
+        await self.history_repo.create(history_entry)
+
+        notification = ReportNotification(
+            reporter_id=report.reporter_id,
+            report_id=report_id,
+            report_title=report.title,
+            old_status=old_status,
+            new_status=new_status,
+        )
+        await self.notification_repo.create(notification)
+
+        await self.push_service.send_push_to_user(
+            user_id=report.reporter_id,
+            title=f'Статус заявки изменён: {report.title}',
+            body=f'{old_status.value} → {new_status.value}',
+            data={"reportId": str(report_id)},
+        )
+
+        return ReadReportDto.model_validate(updated)
+
     # --- Notifications ---
 
     async def get_my_notifications(self, reporter_id: UUID) -> List[ReadNotificationDto]:
