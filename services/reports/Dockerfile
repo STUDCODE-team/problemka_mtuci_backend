@@ -14,6 +14,7 @@ COPY libs/common ./libs/common
 
 ARG POETRY_GROUPS=main
 WORKDIR /app/services/reports
+RUN poetry lock --no-interaction
 RUN poetry install --no-root --only ${POETRY_GROUPS}
 
 # --- код ---

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     NOTIFICATIONS_DATABASE_URL: str = ''
     AUTH_REDIS_URL: str = ''
     NOTIFICATION_SERVICE_URL: str = 'http://notification-service:8000'
+    # Shared secret for internal service-to-service calls (header: X-Internal-Secret)
+    INTERNAL_API_KEY: str = ''
     JWT_SECRET: str = ''
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

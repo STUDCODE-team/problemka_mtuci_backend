@@ -3,7 +3,7 @@
 # Run once on a fresh server. Safe to re-run — all steps are idempotent.
 set -euo pipefail
 
-DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.devapi.problemka-mtuci.tech}
+DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.problemka-mtuci.tech}
 DASHBOARD_USER=${DASHBOARD_USER:-admin}
 DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-passwd}
 
