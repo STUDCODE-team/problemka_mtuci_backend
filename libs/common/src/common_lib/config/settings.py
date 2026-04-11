@@ -8,7 +8,9 @@ BASE_DIR = Path("/app/.env")
 class Settings(BaseSettings):
     AUTH_DATABASE_URL: str = ''
     REPORTS_DATABASE_URL: str = ''
+    NOTIFICATIONS_DATABASE_URL: str = ''
     AUTH_REDIS_URL: str = ''
+    NOTIFICATION_SERVICE_URL: str = 'http://notification-service:8000'
     JWT_SECRET: str = ''
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

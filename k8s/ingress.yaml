@@ -26,3 +26,11 @@ spec:
                 name: reports-service
                 port:
                   number: 8000
+
+          - path: /api/notifications(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8000

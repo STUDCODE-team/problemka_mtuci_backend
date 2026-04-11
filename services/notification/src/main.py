@@ -7,16 +7,10 @@ from fastapi.responses import JSONResponse
 
 from common_lib.infrastructure.db.base import Base
 from infrastructure.db import engine
-from api.routes_reports import router as reports_router
-from api.routes_categories import router as categories_router
-from api.routes_notifications import router as notifications_router
+from api.routes_push import router as push_router
+from api.routes_internal import router as internal_router
 
-# Import models so SQLAlchemy registers them with Base.metadata
-import domain.models.db.report  # noqa: F401
-import domain.models.db.report_comment  # noqa: F401
-import domain.models.db.report_status_history  # noqa: F401
-import domain.models.db.category  # noqa: F401
-import domain.models.db.report_notification  # noqa: F401
+import domain.models.db.push_subscription  # noqa: F401
 
 
 @asynccontextmanager
@@ -27,10 +21,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Reports microservice",
+    title="Notification microservice",
     lifespan=lifespan,
-    debug=True,
-    root_path="/api/reports",
+    root_path="/api/notifications",
 )
 
 app.add_middleware(
@@ -71,6 +64,5 @@ async def health_check():
     return {"status": "ok"}
 
 
-app.include_router(reports_router, prefix="/reports")
-app.include_router(categories_router, prefix="/categories")
-app.include_router(notifications_router, prefix="/notifications")
+app.include_router(push_router, prefix="/push")
+app.include_router(internal_router, prefix="/internal")

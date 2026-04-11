@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   auth:
-    image: registry.example.com/problemka/auth:dev
+    image: registry.problemka-mtuci.tech/auth:dev
     env_file:
       - .env.dev
     ports:
@@ -10,9 +10,17 @@ services:
     restart: always
 
   reports:
-    image: registry.example.com/problemka/reports:dev
+    image: registry.problemka-mtuci.tech/reports:dev
     env_file:
       - .env.dev
     ports:
       - "8002:8000"
+    restart: always
+
+  notification:
+    image: registry.problemka-mtuci.tech/notification:dev
+    env_file:
+      - .env.dev
+    ports:
+      - "8003:8000"
     restart: always

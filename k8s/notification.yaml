@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reports
+  name: notification
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reports
+      app: notification
   template:
     metadata:
       labels:
-        app: reports
+        app: notification
     spec:
       containers:
-        - name: reports
-          image: registry.problemka-mtuci.tech/reports:dev
+        - name: notification
+          image: registry.problemka-mtuci.tech/notification:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -25,10 +25,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: reports-service
+  name: notification-service
 spec:
   selector:
-    app: reports
+    app: notification
   ports:
     - port: 8000
       targetPort: 8000

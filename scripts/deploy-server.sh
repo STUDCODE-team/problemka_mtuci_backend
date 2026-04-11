@@ -10,8 +10,8 @@ DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.devapi.problemka-mtuci.tech}
 DASHBOARD_USER=${DASHBOARD_USER:-admin}
 DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-passwd}
 
-AUTH_IMAGE=${AUTH_IMAGE:-registry.example.com/problemka/auth:dev}
-REPORTS_IMAGE=${REPORTS_IMAGE:-registry.example.com/problemka/reports:dev}
+AUTH_IMAGE=${AUTH_IMAGE:-registry.problemka-mtuci.tech/auth:dev}
+REPORTS_IMAGE=${REPORTS_IMAGE:-registry.problemka-mtuci.tech/reports:dev}
 
 AUTH_DOCKERFILE=${AUTH_DOCKERFILE:-services/auth/Dockerfile}
 REPORTS_DOCKERFILE=${REPORTS_DOCKERFILE:-services/reports/Dockerfile}
@@ -26,6 +26,11 @@ KUBECTL="sudo k3s kubectl"
 
 echo "🌐 Ensuring ingress-nginx is installed..."
 $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.14.2/deploy/static/provider/baremetal/deploy.yaml
+
+echo "🔧 Enabling server-snippet annotations in ingress-nginx..."
+$KUBECTL -n ingress-nginx patch configmap ingress-nginx-controller \
+  --type merge \
+  -p '{"data":{"allow-snippet-annotations":"true"}}'
 
 echo "🔧 Ensuring ingress-nginx NodePort is fixed to 30080/30443..."
 $KUBECTL -n ingress-nginx patch svc ingress-nginx-controller --type='merge' -p '{

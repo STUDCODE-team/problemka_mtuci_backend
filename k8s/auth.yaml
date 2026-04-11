@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: registry.example.com/problemka/auth:dev
+          image: registry.problemka-mtuci.tech/auth:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

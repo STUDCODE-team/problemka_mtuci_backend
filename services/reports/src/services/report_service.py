@@ -4,11 +4,11 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 
+from common_lib.clients import notification_client
 from data.repositories.implemetations.report_repository import ReportRepository
 from data.repositories.implemetations.comment_repository import CommentRepository
 from data.repositories.implemetations.status_history_repository import StatusHistoryRepository
 from data.repositories.implemetations.notification_repository import NotificationRepository
-from services.push_service import PushService
 from domain.models.db.report import Report
 from domain.models.db.report_comment import ReportComment
 from domain.models.db.report_notification import ReportNotification
@@ -31,13 +31,11 @@ class ReportService:
         comment_repo: CommentRepository,
         history_repo: StatusHistoryRepository,
         notification_repo: NotificationRepository,
-        push_service: PushService,
     ):
         self.report_repo = report_repo
         self.comment_repo = comment_repo
         self.history_repo = history_repo
         self.notification_repo = notification_repo
-        self.push_service = push_service
 
     async def create_report(self, dto: CreateReportDto, reporter_id: UUID) -> ReadReportDto:
         report = Report(
@@ -108,7 +106,7 @@ class ReportService:
         )
         await self.notification_repo.create(notification)
 
-        await self.push_service.send_push_to_user(
+        await notification_client.send_push(
             user_id=report.reporter_id,
             title=f'Статус заявки изменён: {report.title}',
             body=f'{old_status.value} → {new_status.value}',
@@ -144,7 +142,7 @@ class ReportService:
         )
         await self.notification_repo.create(notification)
 
-        await self.push_service.send_push_to_user(
+        await notification_client.send_push(
             user_id=report.reporter_id,
             title=f'Статус заявки изменён: {report.title}',
             body=f'{old_status.value} → {new_status.value}',
