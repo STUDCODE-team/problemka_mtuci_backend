@@ -31,6 +31,78 @@ services:
     networks:
       - backend
 
+  # ── GlitchTip (error tracking) ───────────────────────────────────────────────
+
+  glitchtip-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: glitchtip
+    volumes:
+      - glitchtip_db_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-redis:
+    image: redis:7
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-web:
+    image: glitchtip/glitchtip
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    ports:
+      - "8010:8080"
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+      PORT: 8080
+      GLITCHTIP_DOMAIN: https://glitchtip.problemka-mtuci.tech
+      DEFAULT_FROM_EMAIL: no-reply@problemka-mtuci.tech
+      EMAIL_URL: smtp+tls://no-reply%40problemka-mtuci.tech:VMyiOXs4aPuijEtVUFOb@smtp.mail.ru:587
+      CELERY_WORKER_CONCURRENCY: 2
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip
+    command: ./bin/run-celery-with-beat.sh
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+      GLITCHTIP_DOMAIN: https://glitchtip.problemka-mtuci.tech
+      DEFAULT_FROM_EMAIL: no-reply@problemka-mtuci.tech
+      EMAIL_URL: smtp+tls://no-reply%40problemka-mtuci.tech:VMyiOXs4aPuijEtVUFOb@smtp.mail.ru:587
+      CELERY_WORKER_CONCURRENCY: 2
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-migrate:
+    image: glitchtip/glitchtip
+    command: ./bin/run-migrate.sh
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+    restart: "no"
+    networks:
+      - backend
+
   # ── Monitoring ───────────────────────────────────────────────────────────────
 
   prometheus:
@@ -98,6 +170,7 @@ networks:
     driver: bridge
 
 volumes:
+  glitchtip_db_data:
   prometheus_data:
   grafana_data:
   loki_data:
