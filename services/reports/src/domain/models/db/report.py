@@ -50,5 +50,5 @@ class Report(Base):
         DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
 
-    comments = relationship("ReportComment", back_populates="report", lazy="selectin")
-    status_history = relationship("ReportStatusHistory", back_populates="report", lazy="selectin")
+    comments = relationship("ReportComment", back_populates="report", lazy="selectin", cascade="all, delete-orphan")
+    status_history = relationship("ReportStatusHistory", back_populates="report", lazy="selectin", cascade="all, delete-orphan")
