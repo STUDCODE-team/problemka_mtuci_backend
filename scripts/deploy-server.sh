@@ -50,22 +50,28 @@ $KUBECTL apply -f k8s/monitoring/promtail.yaml
 $KUBECTL apply -f k8s/monitoring/tempo.yaml
 $KUBECTL apply -f k8s/monitoring/grafana.yaml
 
-echo "🐛 Creating/updating GlitchTip secret..."
-$KUBECTL -n monitoring create secret generic glitchtip-secret \
-  --from-literal=secret-key="${GLITCHTIP_SECRET_KEY}" \
-  --from-literal=db-password="${GLITCHTIP_DB_PASSWORD}" \
-  --from-literal=database-url="postgresql://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db.monitoring.svc.cluster.local:5432/glitchtip" \
-  --from-literal=email-url="smtp+tls://no-reply%40problemka-mtuci.tech:${SMTP_PASSWORD}@smtp.mail.ru:587" \
-  --dry-run=client -o yaml | $KUBECTL apply -f -
+if [ -n "${GLITCHTIP_SECRET_KEY:-}" ] && [ -n "${GLITCHTIP_DB_PASSWORD:-}" ] && [ -n "${SMTP_PASSWORD:-}" ]; then
+  echo "🐛 Creating/updating GlitchTip secret..."
+  $KUBECTL -n monitoring create secret generic glitchtip-secret \
+    --from-literal=secret-key="${GLITCHTIP_SECRET_KEY}" \
+    --from-literal=db-password="${GLITCHTIP_DB_PASSWORD}" \
+    --from-literal=database-url="postgresql://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db.monitoring.svc.cluster.local:5432/glitchtip" \
+    --from-literal=email-url="smtp+tls://no-reply%40problemka-mtuci.tech:${SMTP_PASSWORD}@smtp.mail.ru:587" \
+    --dry-run=client -o yaml | $KUBECTL apply -f -
 
-echo "🐛 Applying GlitchTip manifests..."
-$KUBECTL apply -f k8s/monitoring/glitchtip.yaml
+  echo "🐛 Applying GlitchTip manifests..."
+  $KUBECTL apply -f k8s/monitoring/glitchtip.yaml
+else
+  echo "⚠️  Skipping GlitchTip: GLITCHTIP_SECRET_KEY, GLITCHTIP_DB_PASSWORD or SMTP_PASSWORD not set"
+fi
 
 echo "♻️ Restarting deployments..."
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/auth
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/reports
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/notification
 $KUBECTL -n monitoring rollout restart deploy/prometheus deploy/loki deploy/grafana deploy/tempo
-$KUBECTL -n monitoring rollout restart deploy/glitchtip-web deploy/glitchtip-worker
+if [ -n "${GLITCHTIP_SECRET_KEY:-}" ]; then
+  $KUBECTL -n monitoring rollout restart deploy/glitchtip-web deploy/glitchtip-worker
+fi
 
 echo "✅ Done"
