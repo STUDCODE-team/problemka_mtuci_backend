@@ -8,7 +8,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from common_lib.infrastructure.db.base import Base
-from domain.models.enums.user_roles import UserRole
 
 
 class User(Base):
@@ -26,7 +25,4 @@ class User(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), server_default=func.now()
-    )
-    role: Mapped[UserRole] = mapped_column(
-        sa.Enum(UserRole), default=UserRole.USER, nullable=False
     )

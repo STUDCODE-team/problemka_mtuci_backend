@@ -23,7 +23,7 @@ class UserRepository(IUserRepository):
         return result.scalar_one_or_none()
 
     async def create(self, email: str, role: UserRole = UserRole.USER) -> User:
-        user = User(email=email, role=UserRole.USER)
+        user = User(email=email)
         self.session.add(user)
         await self.session.flush()
 
@@ -34,23 +34,14 @@ class UserRepository(IUserRepository):
         return user
 
     async def get_effective_role(self, user_id: UUID | str) -> str:
-        """Возвращает роль из user_roles, при отсутствии — создаёт запись на основе users.role."""
+        """Возвращает роль из user_roles, при отсутствии — возвращает USER по умолчанию."""
         result = await self.session.execute(
             select(UserRoleRecord).where(UserRoleRecord.user_id == user_id)
         )
         record = result.scalar_one_or_none()
         if record:
             return record.role
-
-        # Запись отсутствует — создаём на основе существующей роли в users
-        user = await self.get_by_id(user_id)
-        if not user:
-            return UserRole.USER.value
-        role_str = user.role.value.lower()  # 'ADMIN' → 'admin', 'USER' → 'user'
-        new_record = UserRoleRecord(user_id=user.id, role=role_str)
-        self.session.add(new_record)
-        await self.session.commit()
-        return role_str
+        return UserRole.USER.value
 
     async def update_role(self, user_id: UUID | str, new_role: UserRole) -> None:
         result = await self.session.execute(
@@ -77,7 +68,7 @@ class UserRepository(IUserRepository):
 
         result = []
         for user in users:
-            role = roles_map.get(user.id, user.role.value.lower())
+            role = roles_map.get(user.id, UserRole.USER.value)
             result.append((user, role))
         return result
 
