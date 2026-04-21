@@ -19,6 +19,7 @@ opentelemetry-sdk = "^1.25.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.25.0"
 opentelemetry-instrumentation-sqlalchemy = "^0.46b0"
 opentelemetry-instrumentation-httpx = "^0.46b0"
+setuptools = "<81"
 
 [build-system]
 requires = ["poetry-core"]

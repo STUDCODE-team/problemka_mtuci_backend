@@ -36,6 +36,8 @@ app = FastAPI(
     root_path="/api/notifications",
 )
 
+app.add_middleware(OriginCheckMiddleware)
+app.add_middleware(TraceIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https?://[a-zA-Z0-9-]+\.problemka-mtuci\.tech",
@@ -43,9 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(OriginCheckMiddleware)
-app.add_middleware(TraceIdMiddleware)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):

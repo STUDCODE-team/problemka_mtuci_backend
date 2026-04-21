@@ -8,9 +8,11 @@ APPLY_INGRESS=${APPLY_INGRESS:-1}
 
 AUTH_IMAGE=${AUTH_IMAGE:-registry.problemka-mtuci.tech/auth:dev}
 REPORTS_IMAGE=${REPORTS_IMAGE:-registry.problemka-mtuci.tech/reports:dev}
+NOTIFICATION_IMAGE=${NOTIFICATION_IMAGE:-registry.problemka-mtuci.tech/notification:dev}
 
 AUTH_DOCKERFILE=${AUTH_DOCKERFILE:-services/auth/Dockerfile}
 REPORTS_DOCKERFILE=${REPORTS_DOCKERFILE:-services/reports/Dockerfile}
+NOTIFICATION_DOCKERFILE=${NOTIFICATION_DOCKERFILE:-services/notification/Dockerfile}
 
 KUBECTL="sudo k3s kubectl"
 
@@ -31,6 +33,11 @@ echo "🚧 Building reports image..."
 docker build -f "$REPORTS_DOCKERFILE" -t "$REPORTS_IMAGE" .
 echo "📦 Importing reports image into k3s..."
 docker save "$REPORTS_IMAGE" | sudo k3s ctr images import -
+
+echo "🚧 Building notification image..."
+docker build -f "$NOTIFICATION_DOCKERFILE" -t "$NOTIFICATION_IMAGE" .
+echo "📦 Importing notification image into k3s..."
+docker save "$NOTIFICATION_IMAGE" | sudo k3s ctr images import -
 
 echo "📄 Applying backend manifests..."
 $KUBECTL apply -f k8s/services/auth.yaml

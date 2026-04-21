@@ -17,6 +17,7 @@ asyncpg = "^0.30.0"
 pywebpush = "^2.0.0"
 prometheus-fastapi-instrumentator = "*"
 opentelemetry-instrumentation-fastapi = "^0.46b0"
+setuptools = "<81"
 common = { path = "../../libs/common" }
 
 [tool.poetry.group.dev.dependencies]
