@@ -10,6 +10,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from common_lib.infrastructure.db.base import Base
 from common_lib.infrastructure.logging import setup_logging
 from common_lib.infrastructure.telemetry import setup_telemetry
+from common_lib.infrastructure.origin_middleware import OriginCheckMiddleware
 from common_lib.infrastructure.trace_middleware import TraceIdMiddleware
 from common_lib.utils.trace import get_or_create_trace_id
 from infrastructure.db import engine
@@ -43,6 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(OriginCheckMiddleware)
 app.add_middleware(TraceIdMiddleware)
 
 @app.exception_handler(HTTPException)

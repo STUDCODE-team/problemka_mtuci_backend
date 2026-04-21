@@ -1,27 +1,56 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 
 from api.dependencies import get_auth_service
+from common_lib.config.settings import settings
 from common_lib.utils.jwt_utils import CurrentUser, decode_access_token
 from domain.models.enums.user_roles import UserRole
-from domain.models.schemas.refresh_in import RefreshIn
 from domain.models.schemas.request_otp import RequestOtp
 from domain.models.schemas.user_info import UserInfoDto
 from domain.models.schemas.verify_otp import VerifyOtp
 from services.auth_service import AuthService
 
 router = APIRouter()
-bearer_scheme = HTTPBearer()
+
+_ACCESS_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+_REFRESH_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400
+
+
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="strict",
+        max_age=_ACCESS_MAX_AGE,
+        path="/",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="strict",
+        max_age=_REFRESH_MAX_AGE,
+        path=settings.COOKIE_REFRESH_PATH,
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path=settings.COOKIE_REFRESH_PATH)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    access_token: str | None = Cookie(default=None),
 ) -> CurrentUser:
+    if not access_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
-        return decode_access_token(credentials.credentials)
+        return decode_access_token(access_token)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,11 +81,12 @@ async def request_otp(
 
 @router.post("/verify_otp")
 async def verify_otp(
+    response: Response,
     payload: VerifyOtp,
     service: AuthService = Depends(get_auth_service),
 ):
     try:
-        return await service.verify_otp(payload.email, payload.code)
+        tokens = await service.verify_otp(payload.email, payload.code)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except HTTPException:
@@ -64,21 +94,36 @@ async def verify_otp(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+    _set_auth_cookies(response, tokens["access_token"], tokens["refresh_token"])
+    return {"token_type": "bearer", "role": tokens["role"]}
+
 
 @router.post("/refresh")
 async def refresh(
-    payload: RefreshIn,
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
     service: AuthService = Depends(get_auth_service),
 ):
-    return await service.refresh(payload.refresh_token)
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    try:
+        tokens = await service.refresh(refresh_token)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    _set_auth_cookies(response, tokens["access_token"], tokens["refresh_token"])
+    return {"token_type": "bearer"}
 
 
 @router.post("/logout")
 async def logout(
-    payload: RefreshIn,
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
     service: AuthService = Depends(get_auth_service),
 ):
-    await service.logout(payload.refresh_token)
+    if refresh_token:
+        await service.logout(refresh_token)
+    _clear_auth_cookies(response)
     return {"detail": "Logged out successfully"}
 
 

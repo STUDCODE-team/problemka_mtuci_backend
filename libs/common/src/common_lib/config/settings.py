@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     VAPID_PUBLIC_KEY: str = ''
     VAPID_CONTACT_EMAIL: str = 'admin@problemka-mtuci.tech'
 
+    # Cookie security
+    COOKIE_SECURE: bool = True
+    # Browser-visible path prefix for the auth service (used to scope refresh_token cookie)
+    COOKIE_REFRESH_PATH: str = '/api/auth'
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR,
         env_file_encoding="utf-8",
