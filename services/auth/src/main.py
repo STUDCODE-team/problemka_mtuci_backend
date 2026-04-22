@@ -14,6 +14,8 @@ from common_lib.infrastructure.redis.redis_client import init_redis
 from common_lib.infrastructure.telemetry import setup_telemetry
 from common_lib.infrastructure.origin_middleware import OriginCheckMiddleware
 from common_lib.infrastructure.trace_middleware import TraceIdMiddleware
+from common_lib.messaging import producer
+from common_lib.config.settings import settings
 from common_lib.utils.trace import get_or_create_trace_id
 from api.routes_auth import router as auth_router
 import domain.models.db.user_role  # noqa: F401  — регистрирует UserRoleRecord в Base.metadata
@@ -27,7 +29,9 @@ async def lifespan(_: FastAPI):
     await init_redis()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await producer.init_producer(settings.RABBITMQ_URL)
     yield
+    await producer.close_producer()
 
 
 app = FastAPI(

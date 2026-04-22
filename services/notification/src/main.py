@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from common_lib.config.settings import settings
 from common_lib.infrastructure.db.base import Base
 from common_lib.infrastructure.logging import setup_logging
 from common_lib.infrastructure.telemetry import setup_telemetry
@@ -19,6 +20,7 @@ setup_logging("notification")
 setup_telemetry("notification")
 from api.routes_push import router as push_router
 from api.routes_internal import router as internal_router
+from messaging.consumer import start_consumer, stop_consumer
 
 import domain.models.db.push_subscription  # noqa: F401
 
@@ -27,7 +29,9 @@ import domain.models.db.push_subscription  # noqa: F401
 async def lifespan(_: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await start_consumer(settings.RABBITMQ_URL)
     yield
+    await stop_consumer()
 
 
 app = FastAPI(

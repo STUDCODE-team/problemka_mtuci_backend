@@ -39,6 +39,9 @@ docker build -f "$NOTIFICATION_DOCKERFILE" -t "$NOTIFICATION_IMAGE" .
 echo "📦 Importing notification image into k3s..."
 docker save "$NOTIFICATION_IMAGE" | sudo k3s ctr images import -
 
+echo "🐇 Applying RabbitMQ manifest..."
+$KUBECTL apply -f k8s/infra/rabbitmq.yaml
+
 echo "📄 Applying backend manifests..."
 $KUBECTL apply -f k8s/services/auth.yaml
 $KUBECTL apply -f k8s/services/reports.yaml
@@ -73,6 +76,7 @@ else
 fi
 
 echo "♻️ Restarting deployments..."
+$KUBECTL -n "$NAMESPACE" rollout restart deploy/rabbitmq
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/auth
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/reports
 $KUBECTL -n "$NAMESPACE" rollout restart deploy/notification
@@ -80,5 +84,9 @@ $KUBECTL -n monitoring rollout restart deploy/prometheus deploy/loki deploy/graf
 if [ -n "${GLITCHTIP_SECRET_KEY:-}" ]; then
   $KUBECTL -n monitoring rollout restart deploy/glitchtip-web deploy/glitchtip-worker
 fi
+
+echo "🧹 Cleaning up unused Docker images and containers..."
+sudo docker system prune -af
+sudo k3s ctr images prune --all
 
 echo "✅ Done"

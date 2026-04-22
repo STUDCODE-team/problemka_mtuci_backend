@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: always
+    networks:
+      - backend
+
   auth:
     image: registry.problemka-mtuci.tech/auth:dev
     env_file:
@@ -8,6 +20,8 @@ services:
     ports:
       - "8001:8000"
     restart: always
+    depends_on:
+      - rabbitmq
     networks:
       - backend
 
@@ -28,6 +42,8 @@ services:
     ports:
       - "8003:8000"
     restart: always
+    depends_on:
+      - rabbitmq
     networks:
       - backend
 
