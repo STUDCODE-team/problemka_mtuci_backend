@@ -40,6 +40,13 @@ data:
             prefix: index_
             period: 24h
 
+    limits_config:
+      retention_period: 168h
+
+    compactor:
+      retention_enabled: true
+      working_directory: /tmp/loki/compactor
+
     ruler:
       alertmanager_url: http://localhost:9093
 ---
@@ -53,7 +60,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 2Gi
   storageClassName: local-path
 ---
 apiVersion: apps/v1

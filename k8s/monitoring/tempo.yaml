@@ -17,6 +17,10 @@ data:
             http:
               endpoint: 0.0.0.0:4318
 
+    compactor:
+      compaction:
+        block_retention: 24h
+
     storage:
       trace:
         backend: local
@@ -35,7 +39,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 100Mi
   storageClassName: local-path
 ---
 apiVersion: apps/v1
