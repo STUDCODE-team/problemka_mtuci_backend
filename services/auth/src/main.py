@@ -101,7 +101,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def health_check():
     return {"status": "ok"}
 
-app.include_router(auth_router, prefix="/auth")
+app.include_router(auth_router)
 
 Instrumentator().instrument(app).expose(app)
 FastAPIInstrumentor.instrument_app(app)

@@ -105,7 +105,7 @@ async def health_check():
     return {"status": "ok"}
 
 
-app.include_router(reports_router, prefix="/reports")
+app.include_router(reports_router)
 app.include_router(categories_router, prefix="/categories")
 app.include_router(notifications_router, prefix="/notifications")
 
