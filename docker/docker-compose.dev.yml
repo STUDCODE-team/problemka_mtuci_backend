@@ -1,18 +1,192 @@
 version: "3.9"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: always
+    networks:
+      - backend
+
   auth:
-    image: registry.example.com/problemka/auth:dev
+    image: registry.problemka-mtuci.tech/auth:dev
     env_file:
-      - .env.dev
+      - ../env/.env
     ports:
       - "8001:8000"
     restart: always
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
 
   reports:
-    image: registry.example.com/problemka/reports:dev
+    image: registry.problemka-mtuci.tech/reports:dev
     env_file:
-      - .env.dev
+      - ../env/.env
     ports:
       - "8002:8000"
     restart: always
+    networks:
+      - backend
+
+  notification:
+    image: registry.problemka-mtuci.tech/notification:dev
+    env_file:
+      - ../env/.env
+    ports:
+      - "8003:8000"
+    restart: always
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  # ── GlitchTip (error tracking) ───────────────────────────────────────────────
+
+  glitchtip-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: glitchtip
+    volumes:
+      - glitchtip_db_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-redis:
+    image: redis:7
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-web:
+    image: glitchtip/glitchtip
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    ports:
+      - "8010:8080"
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+      PORT: 8080
+      GLITCHTIP_DOMAIN: https://glitchtip.problemka-mtuci.tech
+      DEFAULT_FROM_EMAIL: no-reply@problemka-mtuci.tech
+      EMAIL_URL: smtp+tls://no-reply%40problemka-mtuci.tech:VMyiOXs4aPuijEtVUFOb@smtp.mail.ru:587
+      CELERY_WORKER_CONCURRENCY: 2
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip
+    command: ./bin/run-celery-with-beat.sh
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+      GLITCHTIP_DOMAIN: https://glitchtip.problemka-mtuci.tech
+      DEFAULT_FROM_EMAIL: no-reply@problemka-mtuci.tech
+      EMAIL_URL: smtp+tls://no-reply%40problemka-mtuci.tech:VMyiOXs4aPuijEtVUFOb@smtp.mail.ru:587
+      CELERY_WORKER_CONCURRENCY: 2
+    restart: always
+    networks:
+      - backend
+
+  glitchtip-migrate:
+    image: glitchtip/glitchtip
+    command: ./bin/run-migrate.sh
+    depends_on:
+      - glitchtip-db
+      - glitchtip-redis
+    environment:
+      DATABASE_URL: postgresql://glitchtip:glitchtip@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: changeme-replace-with-random-50-char-string
+    restart: "no"
+    networks:
+      - backend
+
+  # ── Monitoring ───────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://grafana.problemka-mtuci.tech
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    restart: always
+    networks:
+      - backend
+
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/tmp/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - "3100:3100"
+    restart: always
+    networks:
+      - backend
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    depends_on:
+      - loki
+    restart: always
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  glitchtip_db_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

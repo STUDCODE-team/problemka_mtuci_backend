@@ -1,14 +1,14 @@
+import hashlib
+import hmac
 import random
-
-from passlib.hash import bcrypt
 
 
 def hash_value(value: str) -> str:
-    return bcrypt.hash(value)
+    return hashlib.sha256(value.encode()).hexdigest()
 
 
 def verify_hash(value: str, hashed: str) -> bool:
-    return bcrypt.verify(value, hashed)
+    return hmac.compare_digest(hashlib.sha256(value.encode()).hexdigest(), hashed)
 
 
 def generate_value(length: int) -> str:

@@ -18,11 +18,12 @@ sqlalchemy = "^2.0.22"
 aiosqlite = "^0.21.0"
 psycopg2-binary = "^2.9.11"
 pydantic-settings = "^2.0"
-passlib = "*"
 aioredis = "*"
 setuptools = "*"
 redis = { extras = ["async"], version = "^5.0" }
 asyncpg = "^0.30.0"
+prometheus-fastapi-instrumentator = "*"
+opentelemetry-instrumentation-fastapi = "^0.46b0"
 
 common = { path = "../../libs/common"}
 

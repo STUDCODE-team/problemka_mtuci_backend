@@ -7,7 +7,7 @@ redis_client = None
 
 async def init_redis():
     global redis_client
-    redis_client = aioredis.from_url(settings.REDIS_URL)
+    redis_client = aioredis.from_url(settings.AUTH_REDIS_URL)
     return redis_client
 
 

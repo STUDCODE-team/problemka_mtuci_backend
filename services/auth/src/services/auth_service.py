@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta, UTC
 from uuid import UUID
 
+from fastapi import HTTPException
+
 from common_lib.config.settings import settings
 from data.repositories.implementations.sqlalchemy_refresh_token_repository import \
     RefreshTokenRepository
 from data.repositories.implementations.sqlalchemy_user_repository import UserRepository
 from domain.models.enums.user_roles import UserRole
+from domain.models.schemas.user_info import UserInfoDto
 from services.otp_service import OTPService
 from services.token_service import TokenService
 
@@ -34,9 +37,11 @@ class AuthService:
         if not user:
             user = await self.user_repo.create(email)
 
+        effective_role = await self.user_repo.get_effective_role(user.id)
+
         access_token = self.token_service.create_access_token(
             user_id=str(user.id),
-            role=user.role.value,
+            role=effective_role,
         )
         refresh_token, jti = self.token_service.generate_refresh_token(str(user.id))
 
@@ -52,7 +57,7 @@ class AuthService:
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
-            "role": user.role.value,
+            "role": effective_role,
         }
 
     async def refresh(self, refresh_token: str) -> dict:
@@ -68,15 +73,17 @@ class AuthService:
         if not user:
             raise ValueError("User not found")
 
+        effective_role = await self.user_repo.get_effective_role(user.id)
+
         new_access_token = self.token_service.create_access_token(
             user_id=str(user.id),
-            role=user.role.value,
+            role=effective_role,
         )
         new_refresh_token, new_jti = self.token_service.generate_refresh_token(str(user.id))
 
         expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         await self.refresh_repo.save(
-            user_id=UUID(str(user.id)),  # что за пиздец я тут сделала
+            user_id=UUID(str(user.id)),
             raw_token=new_refresh_token,
             jti=new_jti,
             expires_at=expires_at,
@@ -98,10 +105,54 @@ class AuthService:
         except ValueError:
             pass
 
-    async def has_role(self, email: str, required_role: UserRole) -> bool:
+    async def get_user_by_id(self, user_id: UUID):
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            return None
+        role = await self.user_repo.get_effective_role(user.id)
+        return _UserWithRole(user, role)
+
+    async def get_all_users(self) -> list[UserInfoDto]:
+        pairs = await self.user_repo.get_all()
+        return [
+            UserInfoDto(
+                id=user.id,
+                email=user.email,
+                role=role,
+                is_active=user.is_active,
+                created_at=user.created_at,
+            )
+            for user, role in pairs
+        ]
+
+    async def set_user_role(self, user_id: UUID, new_role: UserRole) -> UserInfoDto:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        await self.user_repo.update_role(user_id, new_role)
+        return UserInfoDto(
+            id=user.id,
+            email=user.email,
+            role=new_role.value,
+            is_active=user.is_active,
+            created_at=user.created_at,
+        )
+
+    async def has_privileged_role(self, email: str) -> bool:
         user = await self.user_repo.get_by_email(email)
         if not user:
             raise ValueError("User not found")
-        if user.role != required_role:
+        role = await self.user_repo.get_effective_role(user.id)
+        if role not in (UserRole.ADMIN.value, UserRole.MANAGER.value):
             raise ValueError("Insufficient permissions")
         return True
+
+
+class _UserWithRole:
+    """Обёртка над User с подменённой ролью."""
+    def __init__(self, user, role: str):
+        self.id = user.id
+        self.email = user.email
+        self.role = role
+        self.is_active = user.is_active
+        self.created_at = user.created_at

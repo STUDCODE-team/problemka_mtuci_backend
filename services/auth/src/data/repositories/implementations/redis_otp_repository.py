@@ -1,12 +1,12 @@
 from typing import Optional
 
-import redis
+from redis import asyncio as aioredis
 
 from data.repositories.interfaces.i_otp_repository import OTPRepository
 
 
 class RedisOTPRepository(OTPRepository):
-    def __init__(self, redis_client: redis.Redis):
+    def __init__(self, redis_client: aioredis.Redis):
         self.redis = redis_client
 
     async def save(self, email: str, otp_hash: str, ttl: int) -> None:

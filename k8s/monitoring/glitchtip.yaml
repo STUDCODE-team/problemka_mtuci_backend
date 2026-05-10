@@ -1,0 +1,259 @@
+# GlitchTip — self-hosted error tracking (Sentry-compatible)
+#
+# Prerequisites — create the k8s Secret before applying this manifest:
+#
+#   sudo k3s kubectl -n monitoring create secret generic glitchtip-secret \
+#     --from-literal=secret-key="<50+ char random string>" \
+#     --from-literal=db-password="<postgres password>" \
+#     --from-literal=database-url="postgresql://glitchtip:<db-password>@glitchtip-db.monitoring.svc.cluster.local:5432/glitchtip" \
+#     --from-literal=email-url="submission://no-reply%40problemka-mtuci.tech:<smtp-password>@smtp.mail.ru:587" \
+#     --dry-run=client -o yaml | sudo k3s kubectl apply -f -
+#
+# In deploy-server.sh this secret is created automatically from .env vars.
+# Required .env vars: GLITCHTIP_SECRET_KEY, GLITCHTIP_DB_PASSWORD, SMTP_PASSWORD
+
+# ── Postgres ──────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: glitchtip-db-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip-db
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glitchtip-db
+  template:
+    metadata:
+      labels:
+        app: glitchtip-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: glitchtip
+            - name: POSTGRES_USER
+              value: glitchtip
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: db-password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: glitchtip-db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glitchtip-db
+  namespace: monitoring
+spec:
+  selector:
+    app: glitchtip-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+# ── Redis ─────────────────────────────────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip-redis
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glitchtip-redis
+  template:
+    metadata:
+      labels:
+        app: glitchtip-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glitchtip-redis
+  namespace: monitoring
+spec:
+  selector:
+    app: glitchtip-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+# ── GlitchTip web ─────────────────────────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip-web
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glitchtip-web
+  template:
+    metadata:
+      labels:
+        app: glitchtip-web
+    spec:
+      initContainers:
+        - name: migrate
+          image: glitchtip/glitchtip
+          command: ["./bin/run-migrate.sh"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: database-url
+            - name: REDIS_URL
+              value: redis://glitchtip-redis.monitoring.svc.cluster.local:6379
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: secret-key
+      containers:
+        - name: web
+          image: glitchtip/glitchtip
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: database-url
+            - name: REDIS_URL
+              value: redis://glitchtip-redis.monitoring.svc.cluster.local:6379
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: secret-key
+            - name: PORT
+              value: "8080"
+            - name: GLITCHTIP_DOMAIN
+              value: https://glitchtip.problemka-mtuci.tech
+            - name: DEFAULT_FROM_EMAIL
+              value: no-reply@problemka-mtuci.tech
+            - name: EMAIL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: email-url
+            - name: CELERY_WORKER_CONCURRENCY
+              value: "2"
+            - name: CSRF_TRUSTED_ORIGINS
+              value: https://glitchtip.problemka-mtuci.tech
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glitchtip-web
+  namespace: monitoring
+spec:
+  selector:
+    app: glitchtip-web
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+# ── GlitchTip worker (Celery + beat) ─────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip-worker
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glitchtip-worker
+  template:
+    metadata:
+      labels:
+        app: glitchtip-worker
+    spec:
+      containers:
+        - name: worker
+          image: glitchtip/glitchtip
+          imagePullPolicy: IfNotPresent
+          command: ["./bin/run-celery-with-beat.sh"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: database-url
+            - name: REDIS_URL
+              value: redis://glitchtip-redis.monitoring.svc.cluster.local:6379
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: secret-key
+            - name: GLITCHTIP_DOMAIN
+              value: https://glitchtip.problemka-mtuci.tech
+            - name: DEFAULT_FROM_EMAIL
+              value: no-reply@problemka-mtuci.tech
+            - name: EMAIL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-secret
+                  key: email-url
+            - name: CELERY_WORKER_CONCURRENCY
+              value: "2"
+
+# ── Ingress ───────────────────────────────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: glitchtip
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: glitchtip.problemka-mtuci.tech
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glitchtip-web
+                port:
+                  number: 8080

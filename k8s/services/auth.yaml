@@ -1,20 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reports
+  name: auth
+  namespace: dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reports
+      app: auth
   template:
     metadata:
       labels:
-        app: reports
+        app: auth
     spec:
       containers:
-        - name: reports
-          image: registry.example.com/problemka/reports:dev
+        - name: auth
+          image: registry.problemka-mtuci.tech/auth:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -25,10 +26,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: reports-service
+  name: auth-service
+  namespace: dev
 spec:
   selector:
-    app: reports
+    app: auth
   ports:
     - port: 8000
       targetPort: 8000

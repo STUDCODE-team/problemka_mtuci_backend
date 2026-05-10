@@ -1,87 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENV_FILE=${ENV_FILE:-env/.env.dev}
+ENV_FILE=${ENV_FILE:-env/.env}
 CONFIGMAP_NAME=${CONFIGMAP_NAME:-problemka-env}
+NAMESPACE=${NAMESPACE:-dev}
 APPLY_INGRESS=${APPLY_INGRESS:-1}
-APPLY_DASHBOARD=${APPLY_DASHBOARD:-1}
 
-DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-k8s.devapi.problemka-mtuci.tech}
-DASHBOARD_USER=${DASHBOARD_USER:-admin}
-DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-passwd}
-
-AUTH_IMAGE=${AUTH_IMAGE:-registry.example.com/problemka/auth:dev}
-REPORTS_IMAGE=${REPORTS_IMAGE:-registry.example.com/problemka/reports:dev}
+AUTH_IMAGE=${AUTH_IMAGE:-registry.problemka-mtuci.tech/auth:dev}
+REPORTS_IMAGE=${REPORTS_IMAGE:-registry.problemka-mtuci.tech/reports:dev}
+NOTIFICATION_IMAGE=${NOTIFICATION_IMAGE:-registry.problemka-mtuci.tech/notification:dev}
 
 AUTH_DOCKERFILE=${AUTH_DOCKERFILE:-services/auth/Dockerfile}
 REPORTS_DOCKERFILE=${REPORTS_DOCKERFILE:-services/reports/Dockerfile}
-
-if ! command -v k3s >/dev/null 2>&1; then
-  echo "📦 Installing k3s..."
-  # Disable Traefik so host nginx can keep 80/443.
-  curl -sfL https://get.k3s.io | sh -s - --disable traefik
-fi
+NOTIFICATION_DOCKERFILE=${NOTIFICATION_DOCKERFILE:-services/notification/Dockerfile}
 
 KUBECTL="sudo k3s kubectl"
 
-echo "🌐 Ensuring ingress-nginx is installed..."
-$KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.14.2/deploy/static/provider/baremetal/deploy.yaml
-
-echo "🔧 Ensuring ingress-nginx NodePort is fixed to 30080/30443..."
-$KUBECTL -n ingress-nginx patch svc ingress-nginx-controller --type='merge' -p '{
-  "spec": {
-    "type": "NodePort",
-    "ports": [
-      {"name":"http","port":80,"protocol":"TCP","targetPort":"http","nodePort":30080},
-      {"name":"https","port":443,"protocol":"TCP","targetPort":"https","nodePort":30443}
-    ]
-  }
-}'
-
-if [ "$APPLY_DASHBOARD" = "1" ]; then
-  echo "📊 Ensuring Kubernetes Dashboard is installed..."
-  $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-
-  if [ -n "$DASHBOARD_PASSWORD" ]; then
-    echo "🔐 Creating/updating Dashboard basic auth secret..."
-    HTPASSWD_LINE="${DASHBOARD_USER}:$(openssl passwd -apr1 "$DASHBOARD_PASSWORD")"
-    printf "%s" "$HTPASSWD_LINE" | $KUBECTL -n kubernetes-dashboard create secret generic dashboard-basic-auth \
-      --from-file=auth=/dev/stdin \
-      --dry-run=client -o yaml | $KUBECTL apply -f -
-  else
-    echo "⚠️  DASHBOARD_PASSWORD is empty; skipping basic auth secret creation."
-  fi
-
-  echo "🌐 Applying Dashboard ingress..."
-  cat <<EOF_DASH | $KUBECTL apply -f -
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: kubernetes-dashboard
-  namespace: kubernetes-dashboard
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/auth-type: "basic"
-    nginx.ingress.kubernetes.io/auth-secret: "dashboard-basic-auth"
-    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-spec:
-  rules:
-    - host: "$DASHBOARD_DOMAIN"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: kubernetes-dashboard
-                port:
-                  number: 443
-EOF_DASH
-fi
+echo "🧱 Ensuring namespace exists..."
+$KUBECTL create namespace "$NAMESPACE" --dry-run=client -o yaml | $KUBECTL apply -f -
 
 echo "🧩 Creating/updating env ConfigMap..."
-$KUBECTL create configmap "$CONFIGMAP_NAME" \
+$KUBECTL -n "$NAMESPACE" create configmap "$CONFIGMAP_NAME" \
   --from-env-file="$ENV_FILE" \
   --dry-run=client -o yaml | $KUBECTL apply -f -
 
@@ -95,17 +34,59 @@ docker build -f "$REPORTS_DOCKERFILE" -t "$REPORTS_IMAGE" .
 echo "📦 Importing reports image into k3s..."
 docker save "$REPORTS_IMAGE" | sudo k3s ctr images import -
 
+echo "🚧 Building notification image..."
+docker build -f "$NOTIFICATION_DOCKERFILE" -t "$NOTIFICATION_IMAGE" .
+echo "📦 Importing notification image into k3s..."
+docker save "$NOTIFICATION_IMAGE" | sudo k3s ctr images import -
+
+echo "🐇 Applying RabbitMQ manifest..."
+$KUBECTL apply -f k8s/infra/rabbitmq.yaml
+
 echo "📄 Applying backend manifests..."
-$KUBECTL apply -f k8s/auth.yaml
-$KUBECTL apply -f k8s/reports.yaml
+$KUBECTL apply -f k8s/services/auth.yaml
+$KUBECTL apply -f k8s/services/reports.yaml
+$KUBECTL apply -f k8s/services/notification.yaml
 
 if [ "$APPLY_INGRESS" = "1" ]; then
   echo "🌐 Applying ingress..."
-  $KUBECTL apply -f k8s/ingress.yaml
+  $KUBECTL apply -f k8s/infra/ingress.yaml
+fi
+
+echo "📊 Applying monitoring manifests..."
+$KUBECTL create namespace monitoring --dry-run=client -o yaml | $KUBECTL apply -f -
+$KUBECTL apply -f k8s/monitoring/prometheus.yaml
+$KUBECTL apply -f k8s/monitoring/loki.yaml
+$KUBECTL apply -f k8s/monitoring/promtail.yaml
+$KUBECTL apply -f k8s/monitoring/tempo.yaml
+$KUBECTL apply -f k8s/monitoring/grafana.yaml
+
+if [ -n "${GLITCHTIP_SECRET_KEY:-}" ] && [ -n "${GLITCHTIP_DB_PASSWORD:-}" ] && [ -n "${SMTP_PASSWORD:-}" ]; then
+  echo "🐛 Creating/updating GlitchTip secret..."
+  $KUBECTL -n monitoring create secret generic glitchtip-secret \
+    --from-literal=secret-key="${GLITCHTIP_SECRET_KEY}" \
+    --from-literal=db-password="${GLITCHTIP_DB_PASSWORD}" \
+    --from-literal=database-url="postgresql://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db.monitoring.svc.cluster.local:5432/glitchtip" \
+    --from-literal=email-url="smtp+tls://no-reply%40problemka-mtuci.tech:${SMTP_PASSWORD}@smtp.mail.ru:587" \
+    --dry-run=client -o yaml | $KUBECTL apply -f -
+
+  echo "🐛 Applying GlitchTip manifests..."
+  $KUBECTL apply -f k8s/monitoring/glitchtip.yaml
+else
+  echo "⚠️  Skipping GlitchTip: GLITCHTIP_SECRET_KEY, GLITCHTIP_DB_PASSWORD or SMTP_PASSWORD not set"
 fi
 
 echo "♻️ Restarting deployments..."
-$KUBECTL rollout restart deploy/auth
-$KUBECTL rollout restart deploy/reports
+$KUBECTL -n "$NAMESPACE" rollout restart deploy/rabbitmq
+$KUBECTL -n "$NAMESPACE" rollout restart deploy/auth
+$KUBECTL -n "$NAMESPACE" rollout restart deploy/reports
+$KUBECTL -n "$NAMESPACE" rollout restart deploy/notification
+$KUBECTL -n monitoring rollout restart deploy/prometheus deploy/loki deploy/grafana deploy/tempo
+if [ -n "${GLITCHTIP_SECRET_KEY:-}" ]; then
+  $KUBECTL -n monitoring rollout restart deploy/glitchtip-web deploy/glitchtip-worker
+fi
+
+echo "🧹 Cleaning up unused Docker images and containers..."
+sudo docker system prune -af
+sudo k3s ctr images prune --all
 
 echo "✅ Done"
