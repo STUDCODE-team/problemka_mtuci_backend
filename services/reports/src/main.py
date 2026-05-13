@@ -105,9 +105,9 @@ async def health_check():
     return {"status": "ok"}
 
 
+Instrumentator().instrument(app).expose(app)
+FastAPIInstrumentor.instrument_app(app)
+
 app.include_router(reports_router)
 app.include_router(categories_router, prefix="/categories")
 app.include_router(notifications_router, prefix="/notifications")
-
-Instrumentator().instrument(app).expose(app)
-FastAPIInstrumentor.instrument_app(app)
