@@ -41,10 +41,11 @@ data:
             period: 24h
 
     limits_config:
-      retention_period: 168h
+      retention_period: 720h
 
     compactor:
       retention_enabled: true
+      delete_request_store: filesystem
       working_directory: /tmp/loki/compactor
 
     ruler:
