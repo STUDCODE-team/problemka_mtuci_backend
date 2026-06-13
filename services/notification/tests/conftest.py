@@ -1,6 +1,9 @@
+import logging
 import os
 import sys
 from pathlib import Path
+
+logging.disable(logging.WARNING)
 
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-key-at-least-32chars!!")
 os.environ.setdefault("AUTH_DATABASE_URL", "sqlite+aiosqlite:///:memory:")

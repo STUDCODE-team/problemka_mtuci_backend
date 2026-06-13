@@ -1,6 +1,10 @@
+import logging
 import os
 import sys
 from pathlib import Path
+
+# Suppress standard-library log output (OTLP retry noise, etc.) during tests
+logging.disable(logging.WARNING)
 
 # Set env vars before any app imports so Settings() picks them up
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-key-at-least-32chars!!")
