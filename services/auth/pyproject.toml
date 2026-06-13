@@ -29,8 +29,18 @@ common = { path = "../../libs/common"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
 black = "^24.0.0"
 ruff = "^0.6.0"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::UserWarning",
+]
 
 [tool.poetry.group.debug.dependencies]
 debugpy = "*"
